@@ -27,7 +27,7 @@ class ArgumentAnalyzer:
             print("Error: definitions.json not found")
             return {}
     
-    def analyze_argument(self, argument_text):
+    def analyze_argument(self, argument_text, include_improvements=True):
         """
         Two-stage pipeline:
           Call 1 (cheap): Extract structural metadata from the argument.
@@ -62,7 +62,7 @@ class ArgumentAnalyzer:
             score = self._calculate_score(detected_issues, argument_text, metadata, short_deduction_hint)
 
             # CALL 3 — improvement suggestions based on detected issues
-            improvements = self._generate_improvements(argument_text, detected_issues)
+            improvements = self._generate_improvements(argument_text, detected_issues) if include_improvements else []
             
             return {
                 "success": True,
@@ -72,7 +72,8 @@ class ArgumentAnalyzer:
                 "short_deduction_hint": short_deduction_hint,
                 "score": score,
                 "score_breakdown": self._get_score_breakdown(detected_issues, argument_text, metadata, short_deduction_hint),
-                "improvements": improvements
+                "improvements": improvements,
+                "improvements_pending": not include_improvements
             }
             
         except Exception as e:
@@ -781,6 +782,10 @@ Return a JSON array of 5 strings, nothing else. Example:
             return []
         except Exception:
             return []
+
+    def generate_improvements(self, argument_text, detected_issues):
+        """Public wrapper used by deferred-improvements background jobs."""
+        return self._generate_improvements(argument_text, detected_issues)
 
     @staticmethod
     def _substance_penalty(argument_text, metadata):

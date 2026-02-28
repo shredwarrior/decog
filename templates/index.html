@@ -690,6 +690,8 @@
             const improvSection = document.getElementById('improvements-section');
             const improvList = document.getElementById('improvements-list');
             improvList.innerHTML = '';
+            const existingStatus = document.getElementById('improvements-status');
+            if (existingStatus) existingStatus.remove();
             const improvements = data.improvements || [];
             if (improvements.length > 0) {
                 improvSection.classList.remove('hidden');
@@ -703,6 +705,15 @@
             }
 
             currentAnalysisId = data.analysis_id || null;
+            if (data.improvements_pending && currentAnalysisId) {
+                improvSection.classList.remove('hidden');
+                const status = document.createElement('p');
+                status.id = 'improvements-status';
+                status.className = 'improvements-status';
+                status.textContent = 'Generating improvements...';
+                improvSection.appendChild(status);
+                fetchDeferredImprovements(currentAnalysisId);
+            }
 
             // Show results with smooth entrance (loading section stays visible above)
             const resultsEl = document.getElementById('results');
@@ -711,6 +722,51 @@
                 resultsEl.classList.add('results-visible');
                 resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
+        }
+
+        async function fetchDeferredImprovements(analysisId, attempts = 0) {
+            const maxAttempts = 15;
+            try {
+                const resp = await fetch(`/api/analysis/${analysisId}/improvements`);
+                const data = await resp.json();
+                const improvSection = document.getElementById('improvements-section');
+                const improvList = document.getElementById('improvements-list');
+                let status = document.getElementById('improvements-status');
+
+                if (data.success && data.status === 'done' && Array.isArray(data.improvements) && data.improvements.length) {
+                    improvList.innerHTML = '';
+                    data.improvements.forEach(s => {
+                        const li = document.createElement('li');
+                        li.textContent = s;
+                        improvList.appendChild(li);
+                    });
+                    if (status) status.remove();
+                    return;
+                }
+
+                if (!status) {
+                    status = document.createElement('p');
+                    status.id = 'improvements-status';
+                    status.className = 'improvements-status';
+                    improvSection.appendChild(status);
+                }
+
+                if (data.status === 'failed') {
+                    status.textContent = 'Improvements unavailable right now. Please retry analysis.';
+                    return;
+                }
+
+                if (attempts >= maxAttempts) {
+                    status.textContent = 'Improvements are taking longer than expected.';
+                    return;
+                }
+
+                status.textContent = 'Generating improvements...';
+                setTimeout(() => fetchDeferredImprovements(analysisId, attempts + 1), 3000);
+            } catch {
+                const status = document.getElementById('improvements-status');
+                if (status) status.textContent = 'Could not load improvements.';
+            }
         }
 
         function displayIssueObjects(elementId, issues, valueField) {

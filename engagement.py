@@ -116,6 +116,22 @@ def _get_analysis(analysis_id):
     return dict(row) if row else None
 
 
+def get_analysis_record(analysis_id):
+    """Public getter for a stored analysis row."""
+    return _get_analysis(analysis_id)
+
+
+def update_analysis_improvements(analysis_id, improvements):
+    """Persist deferred improvements for an existing analysis."""
+    conn = _get_db()
+    conn.execute(
+        "UPDATE analyses SET improvements = ? WHERE id = ?",
+        (json.dumps(improvements or []), analysis_id),
+    )
+    conn.commit()
+    conn.close()
+
+
 # ──────────────────────────────────────────────
 #  Routes
 # ──────────────────────────────────────────────

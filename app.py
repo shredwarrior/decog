@@ -2,9 +2,17 @@ from datetime import timedelta
 from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 from analyzer import ArgumentAnalyzer
-from engagement import engagement, init_db, save_analysis
+from engagement import (
+    engagement,
+    init_db,
+    save_analysis,
+    get_analysis_record,
+    update_analysis_improvements,
+)
 from prototype_logging import log_analysis_artifact, log_feedback_event
+import json
 import os
+import threading
 
 app = Flask(__name__)
 CORS(app)
@@ -16,9 +24,36 @@ app.register_blueprint(engagement)
 init_db()
 
 analyzer = ArgumentAnalyzer()
+app.config["ARG_ANALYZER"] = analyzer
 
 FREE_MAX_WORDS = 300
 SUBSCRIBED_MAX_WORDS = 2000
+DEFER_IMPROVEMENTS = os.getenv("DEFER_IMPROVEMENTS", "true").strip().lower() in {"1", "true", "yes", "on"}
+_improvement_jobs = {}
+
+
+def _run_improvement_job(analysis_id, argument_text, detected_issues):
+    """Background task to compute improvements without blocking /api/analyze."""
+    _improvement_jobs[analysis_id] = {"status": "running"}
+    try:
+        improvements = analyzer.generate_improvements(argument_text, detected_issues)
+        update_analysis_improvements(analysis_id, improvements)
+        _improvement_jobs[analysis_id] = {"status": "done", "improvements": improvements}
+    except Exception as exc:
+        _improvement_jobs[analysis_id] = {"status": "failed", "error": str(exc)}
+
+
+def _start_improvement_job(analysis_id, argument_text, detected_issues):
+    state = _improvement_jobs.get(analysis_id, {})
+    if state.get("status") in {"pending", "running"}:
+        return
+    _improvement_jobs[analysis_id] = {"status": "pending"}
+    worker = threading.Thread(
+        target=_run_improvement_job,
+        args=(analysis_id, argument_text, detected_issues),
+        daemon=True,
+    )
+    worker.start()
 
 
 @app.route('/')
@@ -51,11 +86,14 @@ def analyze():
                 "error": f"Argument is too long ({word_count} words). Please keep it under {max_words} words."
             }), 400
 
-        result = analyzer.analyze_argument(argument_text)
+        result = analyzer.analyze_argument(argument_text, include_improvements=not DEFER_IMPROVEMENTS)
 
         if result.get("success"):
             analysis_id = save_analysis(argument_text, result)
             result["analysis_id"] = analysis_id
+            if DEFER_IMPROVEMENTS and not result.get("improvements"):
+                _start_improvement_job(analysis_id, argument_text, result.get("detected_issues", {}))
+                result["improvements_pending"] = True
             try:
                 log_analysis_artifact(argument_text, result, analysis_id)
             except Exception:
@@ -69,6 +107,37 @@ def analyze():
             "success": False,
             "error": str(e)
         }), 500
+
+
+@app.route('/api/analysis/<analysis_id>/improvements', methods=['GET'])
+def analysis_improvements(analysis_id):
+    """Return deferred improvements status and data."""
+    row = get_analysis_record(analysis_id)
+    if not row:
+        return jsonify({"success": False, "error": "Analysis not found"}), 404
+
+    stored_improvements = json.loads(row.get("improvements") or "[]")
+    if stored_improvements:
+        _improvement_jobs[analysis_id] = {"status": "done", "improvements": stored_improvements}
+        return jsonify({
+            "success": True,
+            "status": "done",
+            "improvements": stored_improvements,
+        })
+
+    state = _improvement_jobs.get(analysis_id, {})
+    status = state.get("status", "pending")
+    if status not in {"running", "pending"}:
+        detected_issues = json.loads(row.get("detected_issues") or "{}")
+        _start_improvement_job(analysis_id, row.get("argument_text", ""), detected_issues)
+        status = "pending"
+
+    return jsonify({
+        "success": True,
+        "status": status,
+        "improvements": state.get("improvements", []),
+        "error": state.get("error"),
+    })
 
 
 @app.route('/api/analysis-feedback', methods=['POST'])
