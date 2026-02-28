@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>de-cognition: Argument Analyser</title>
+    <meta name="description" content="de-cognition: find errors in opinions">
+    <meta name="author" content="Cognition Today, Individual">
+    <link rel="canonical" href="{{ request.url }}">
+    <meta property="og:title" content="de-cognition: find errors in opinions">
+    <meta property="og:description" content="de-cognition: argument analyser">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="de-cognition: argument analyser">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:image" content="{{ url_for('static', filename='logo.png', _external=True) }}">
+    <meta property="og:image:alt" content="de-cognition logo">
+    <meta property="og:locale" content="en_US">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="de-cognition: find errors in opinions">
+    <meta name="twitter:description" content="de-cognition: argument analyser">
+    <meta name="twitter:image" content="{{ url_for('static', filename='logo.png', _external=True) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+</head>
+<body data-max-words="{{ max_words }}" data-subscribed="{{ 'true' if is_subscribed else 'false' }}">
+    <div class="container">
+
+        <!-- Logo bar + CTA links -->
+        <div class="top-bar">
+            <div class="logo-area">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Cognition Today" class="logo-img">
+            </div>
+            <div class="top-cta-area">
+                <a href="https://cognitiontoday.com" class="top-cta-link" target="_blank" rel="noopener">Cognition Today</a>
+                <a href="https://cognitiontoday.com/de-cognition-argument-analyzer" class="top-cta-link highlight" target="_blank" rel="noopener">Learn More</a>
+            </div>
+        </div>
+
+        <header>
+            <h1>de-cognition: argument analyser</h1>
+            <p class="subtitle">Find errors in opinions and arguments</p>
+        </header>
+
+        <main>
+            <div class="input-section">
+                <div class="input-header">
+                    <label for="argument-input">Enter your argument, opinion, or conclusion:</label>
+                    <button class="info-btn" id="info-btn" type="button" title="What do these categories mean?" onclick="openInfoModal()">i</button>
+                </div>
+                <textarea 
+                    id="argument-input" 
+                    placeholder="Type your argument here..."
+                    rows="6"
+                ></textarea>
+                <div class="input-footer">
+                    <div id="word-counter" class="word-counter">0 / 300 words</div>
+                    <div class="hint">Tip: keep it clear and evidence-based. Ctrl+Enter submits.</div>
+                </div>
+                <div class="input-actions">
+                    <button id="analyze-btn" onclick="analyzeArgument()">Analyze Argument</button>
+                    <div id="inline-subscribe" class="inline-subscribe">
+                        <form class="inline-subscribe-form" onsubmit="handleSubscribe(event)">
+                            <input type="email" id="subscribe-email-inline" placeholder="your@email.com" required>
+                            <button type="submit" class="inline-subscribe-btn">Subscribe</button>
+                        </form>
+                        <div class="inline-subscribe-label">Subscribe to unlock 2,000-word input</div>
+                        <div class="inline-subscribe-legal">By subscribing you accept the <a href="https://cognitiontoday.com/terms-and-conditions/" target="_blank" rel="noopener">T&amp;C</a>, <a href="https://cognitiontoday.com/privacy-policy/" target="_blank" rel="noopener">Privacy Policy</a>, and agree to receive blog updates from Cognition Today via email.</div>
+                    </div>
+                    <div id="inline-subscribed-badge" class="inline-subscribed-badge hidden">&#10003; Subscribed &mdash; 2,000-word limit active</div>
+                </div>
+            </div>
+
+            <div id="loading" class="loading hidden">
+                <div class="progress-section">
+                    <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+                    <p id="progress-label" class="progress-label">Preparing analysis...</p>
+                </div>
+                <div class="loading-row">
+                    <div class="scratch-section">
+                        <p class="scratch-hint" id="scratch-hint">While I analyze, scratch the card to reveal your secret animal</p>
+                        <div class="scratch-card" id="scratch-card">
+                            <pre class="ascii-art" id="ascii-art"></pre>
+                            <canvas id="scratch-canvas" width="280" height="200"></canvas>
+                        </div>
+                        <p class="animal-name hidden" id="animal-name"></p>
+                    </div>
+                    <div class="loading-info-widget">
+                        <h4 class="loading-info-title">How scoring works</h4>
+                        <div class="loading-info-item">
+                            <h5>Bias Score</h5>
+                            <p>Measures how much emotion, opinion, and framing bias is present.</p>
+                            <span>Higher = too many biases</span>
+                        </div>
+                        <div class="loading-info-item">
+                            <h5>Testability</h5>
+                            <p>Measures how testable and explainable your claim is using razor checks.</p>
+                            <span>Higher means stronger falsifiability and clearer empirical framing</span>
+                        </div>
+                        <div class="loading-info-item">
+                            <h5>Logic Integrity</h5>
+                            <p>Measures assumptions, if/then structure, contradiction control, and coherence.</p>
+                            <span>High = well thought out; Low = illogical chain quality</span>
+                        </div>
+                        <div class="loading-info-item">
+                            <h5>Final Score</h5>
+                            <p>Weighted sum of Bias + Testability + Logic Integrity.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="results" class="results hidden">
+
+                <!-- ROW 1: Overall + three scoring dimensions -->
+                <div class="card-soft scores-row">
+                    <div class="score-trio">
+                        <div class="trio-item">
+                            <div class="trio-label">Overall Strength</div>
+                            <div class="score-circle big" id="score-circle" aria-label="Overall argument strength">
+                                <div class="score-inner big">
+                                    <div class="score-number"><span id="score-value">0</span><span class="score-percent">%</span></div>
+                                </div>
+                            </div>
+                            <div class="trio-sub" id="score-sub">0 / 100</div>
+                        </div>
+                        <div class="trio-item">
+                            <div class="trio-label">Bias Score</div>
+                            <div class="score-circle med" id="circle-bias" aria-label="Bias score">
+                                <div class="score-inner med">
+                                    <div class="score-number"><span id="bias-value">0</span><span class="score-percent">%</span></div>
+                                </div>
+                            </div>
+                            <div class="trio-caption">Higher = too many biases</div>
+                        </div>
+                        <div class="trio-item">
+                            <div class="trio-label">Testability</div>
+                            <div class="score-circle med" id="circle-test" aria-label="Testability via razors">
+                                <div class="score-inner med">
+                                    <div class="score-number"><span id="test-value">0</span><span class="score-percent">%</span></div>
+                                </div>
+                            </div>
+                            <div class="trio-caption">Philosophical razors passed (can at least debate this well)</div>
+                        </div>
+                        <div class="trio-item">
+                            <div class="trio-label">Logic Integrity</div>
+                            <div class="score-circle med" id="circle-logic" aria-label="Logic integrity">
+                                <div class="score-inner med">
+                                    <div class="score-number"><span id="logic-value">0</span><span class="score-percent">%</span></div>
+                                </div>
+                            </div>
+                            <div class="trio-caption">Assumptions, conditionals, and coherence</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Argument quote (shown after analysis) -->
+                <div class="card-soft argument-quote-row" id="argument-quote-row">
+                    <div class="argument-quote-label">Argument analysed</div>
+                    <div class="argument-quote-text" id="argument-quote-text"></div>
+                </div>
+
+                <!-- ROW 2: Interpretation + Executive Summary -->
+                <div class="card-soft interp-row">
+                    <div class="interp-grid">
+                        <div class="interp-status">
+                            <h3>Interpretation</h3>
+                            <div class="score-status-label" id="score-status-label"></div>
+                            <div class="score-status-text" id="score-status-text"></div>
+                        </div>
+                        <div class="exec-summary">
+                            <h3>Executive Summary</h3>
+                            <div id="exec-sentence" class="exec-sentence"></div>
+                            <ul id="exec-bullets" class="exec-bullets"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logic snapshot from metadata hints -->
+                <div class="card-soft logic-snapshot-row">
+                    <div class="logic-snapshot-title">Logic Analysis</div>
+                    <div class="logic-snapshot-chips" id="logic-snapshot-chips"></div>
+                </div>
+
+                <!-- ROW 3: Detailed analysis -->
+                <div class="detail-grid">
+                    <!-- LEFT: Fallacies / Biases / Distortions stacked -->
+                    <div class="card-soft issues-stack">
+                        <div class="issue-category">
+                            <h3>Logical Fallacies <span class="cat-count" id="fallacies-count"></span></h3>
+                            <div id="fallacies-list" class="issue-list"></div>
+                        </div>
+                        <div class="issue-category">
+                            <h3>Cognitive Biases <span class="cat-count" id="biases-count"></span></h3>
+                            <div id="biases-list" class="issue-list"></div>
+                        </div>
+                        <div class="issue-category">
+                            <h3>Cognitive Distortions <span class="cat-count" id="distortions-count"></span></h3>
+                            <div id="distortions-list" class="issue-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Razors -->
+                    <div class="card-soft razors-panel">
+                        <div class="issue-category positive">
+                            <h3>Philosophical Razors</h3>
+                            <div id="razors-list" class="issue-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 3b: View all detected issues (expandable) -->
+                <div class="card-soft all-issues-section hidden" id="all-issues-section">
+                    <button class="toggle-all-btn" id="toggle-all-btn" type="button" data-total="" onclick="toggleAllIssues()">
+                        ▸ View all detected issues
+                    </button>
+                    <div id="all-issues-body" class="all-issues-body hidden">
+                        <div class="all-issues-grid">
+                            <div class="all-issues-col">
+                                <h4>All Logical Fallacies</h4>
+                                <div id="all-fallacies-list"></div>
+                            </div>
+                            <div class="all-issues-col">
+                                <h4>All Cognitive Biases</h4>
+                                <div id="all-biases-list"></div>
+                            </div>
+                            <div class="all-issues-col">
+                                <h4>All Cognitive Distortions</h4>
+                                <div id="all-distortions-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 3c: Improvement Suggestions -->
+                <div class="card-soft improvements-section hidden" id="improvements-section">
+                    <h3 class="improvements-title">5 Ways to Strengthen This Argument</h3>
+                    <ol class="improvements-list" id="improvements-list"></ol>
+                </div>
+
+                <!-- ROW 4: Engagement bar (Share / Subscribe) -->
+                <div class="card-soft engagement-bar" id="engagement-bar">
+                    <div class="engagement-col" style="position:relative;">
+                        <button class="engagement-btn" id="share-btn" onclick="openShareMenu()">
+                            <span class="eng-icon">&#128279;</span> Share
+                        </button>
+                        <div class="share-menu hidden" id="share-menu">
+                            <button class="share-option" onclick="shareToTwitter()">Share on X / Twitter</button>
+                            <button class="share-option" onclick="shareToLinkedIn()">Share on LinkedIn</button>
+                            <button class="share-option" onclick="shareToFacebook()">Share on Facebook</button>
+                            <button class="share-option" onclick="shareDownloadImage()">Save as image</button>
+                            <button class="share-option" onclick="shareLink()">Copy share link</button>
+                        </div>
+                    </div>
+                    <div class="engagement-col subscribe-col">
+                        <div id="subscribe-form-wrap">
+                            <div class="subscribe-brand">Subscribe to Cognition Today</div>
+                            <div class="subscribe-sub">Unlock 2,000-word analysis</div>
+                            <form class="subscribe-form" onsubmit="handleSubscribe(event)">
+                                <input type="email" id="subscribe-email" placeholder="your@email.com" required>
+                                <button type="submit" class="subscribe-btn">Subscribe</button>
+                            </form>
+                        </div>
+                        <div id="subscribed-badge" class="subscribed-badge hidden">
+                            &#10003; Subscribed &mdash; 2,000-word limit active
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ad slot: bottom of results -->
+                <div class="ad-slot" id="ad-slot-bottom">
+                    <!-- Ad placeholder -->
+                </div>
+            </div>
+
+            <div id="error" class="error hidden"></div>
+        </main>
+    </div>
+
+    <!-- Info modal (simplified, no LLM call) -->
+    <div id="info-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="info-title">
+        <div class="modal-backdrop" onclick="closeInfoModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="info-title">How This App Works</h2>
+                <button class="modal-close" onclick="closeInfoModal()" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-intro">
+                    This app analyzes your text using psychological, philosophical, and logical frameworks to evaluate argument strength.
+                    It scores your argument between 0 and 100 using three dimensions: bias score, testability, and logic integrity.
+                </p>
+
+                <div class="hierarchy">
+                    <h3>What we look for</h3>
+
+                    <div class="info-category">
+                        <h4>Logical Fallacies</h4>
+                        <p>Flaws in reasoning structure that weaken an argument.</p>
+                        <p class="info-examples"><strong>Examples:</strong> Ad Hominem (attacking the person), Strawman (misrepresenting an argument), False Dilemma (only two options presented), Appeal to Emotion.</p>
+                    </div>
+
+                    <div class="info-category">
+                        <h4>Cognitive Biases</h4>
+                        <p>Systematic thinking shortcuts that can skew judgment without the arguer realizing it.</p>
+                        <p class="info-examples"><strong>Examples:</strong> Confirmation Bias (favoring what you already believe), Anchoring Bias (over-relying on first information), Survivorship Bias (only seeing successes).</p>
+                    </div>
+
+                    <div class="info-category">
+                        <h4>Cognitive Distortions</h4>
+                        <p>Common inaccurate thought patterns, often driven by emotion rather than evidence.</p>
+                        <p class="info-examples"><strong>Examples:</strong> All-or-Nothing Thinking (black/white categories), Catastrophizing (expecting the worst), Emotional Reasoning (feelings = facts).</p>
+                    </div>
+
+                    <div class="info-category">
+                        <h4>Philosophical Razors</h4>
+                        <p>Principles used to evaluate whether an argument is testable and epistemically sound. Passing a razor means the argument is measurable or falsifiable.</p>
+                        <p class="info-examples"><strong>Examples:</strong> Occam's Razor (simplest explanation), Hitchens's Razor (evidence required for claims), Popper's Falsifiability (can it be disproven?).</p>
+                    </div>
+
+                    <div class="info-category">
+                        <h4>Logic Integrity</h4>
+                        <p>A separate structural benchmark for explicit assumptions, if/then completeness, contradiction control, uncertainty calibration, and inferential chain stability.</p>
+                        <p class="info-examples"><strong>Output style:</strong> "Biased, not testable or explainable, illogical" or "Low bias, testable and explainable, well thought out."</p>
+                    </div>
+                </div>
+
+                <div class="info-cta">
+                    <p>For the full list of all fallacies, biases, distortions, and razors with detailed definitions:</p>
+                    <a href="https://cognitiontoday.com" class="cta-btn" target="_blank" rel="noopener">Visit Cognition Today</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let MAX_WORDS = parseInt(document.body.dataset.maxWords) || 300;
+        let isSubscribed = document.body.dataset.subscribed === 'true';
+        let currentAnalysisId = null;
+
+        if (isSubscribed) {
+            document.getElementById('inline-subscribe').classList.add('hidden');
+            document.getElementById('inline-subscribed-badge').classList.remove('hidden');
+            const oldWrap = document.getElementById('subscribe-form-wrap');
+            if (oldWrap) oldWrap.classList.add('hidden');
+            const oldBadge = document.getElementById('subscribed-badge');
+            if (oldBadge) oldBadge.classList.remove('hidden');
+        }
+
+
+        /* ── Progress bar simulation ─────────────────── */
+        const PROGRESS_STAGES = [
+            { pct: 30,  label: "Extracting claim structure...",      ms: 8000  },
+            { pct: 60,  label: "Detecting biases and fallacies...",  ms: 12000 },
+            { pct: 85,  label: "Evaluating philosophical razors...", ms: 6000  },
+            { pct: 95,  label: "Generating improvements...",         ms: 5000  },
+            { pct: 99,  label: "Finalizing score...",                ms: 60000 },
+        ];
+        let _progressTimer = null;
+
+        function startProgress() {
+            const fill  = document.getElementById('progress-fill');
+            const label = document.getElementById('progress-label');
+            fill.style.transition = 'none';
+            fill.style.width = '0%';
+            void fill.offsetWidth;
+            let idx = 0;
+            function next() {
+                if (idx >= PROGRESS_STAGES.length) return;
+                const s = PROGRESS_STAGES[idx];
+                fill.style.transition = `width ${s.ms}ms linear`;
+                fill.style.width = s.pct + '%';
+                label.textContent = s.label;
+                idx++;
+                _progressTimer = setTimeout(next, s.ms);
+            }
+            next();
+        }
+
+        function stopProgress() {
+            clearTimeout(_progressTimer);
+            const fill  = document.getElementById('progress-fill');
+            const label = document.getElementById('progress-label');
+            fill.style.transition = 'width 300ms ease';
+            fill.style.width = '100%';
+            label.textContent = 'Done!';
+        }
+
+        /* ── ASCII art pool (name + art) ────────────── */
+        const ASCII_ANIMALS = [
+{ name: "Cat", art: `  /\\_/\\
+ ( o.o )
+  > ^ <
+ /|   |\\
+(_|   |_)` },
+{ name: "Spider", art: `    /\\_____/\\
+   /  o   o  \\
+  ( ==  ^  == )
+   )         (
+  (           )
+ ( (  )   (  ) )
+(__(__)___(__)__)` },
+{ name: "Owl", art: `   ___
+  (o o)
+ (  V  )
+/--   --\\
+|       |
+ \\_____/` },
+{ name: "Duck", art: `     __
+ ___( o)>
+ \\ <_. )
+  \`---'` },
+{ name: "Bear", art: `    .---.
+   / o o \\
+  (   "   )
+   \\  -  /
+    \`---'
+    /| |\\
+   (_| |_)` },
+{ name: "Frog", art: `   _  _
+  (o)(o)
+ /  ..  \\
+(__/  \\__)
+  |    |
+  |    |
+  L____J` },
+{ name: "Rabbit", art: `    ^  ^
+   (O  O)
+   (  >  )
+    \\--/
+   _|  |_
+  | \\  / |
+  |  ||  |
+  L__||__J` },
+{ name: "Penguin", art: `     .--.
+    |o_o |
+    |:_/ |
+   //   \\ \\
+  (|     | )
+ /'\\_   _/\`\\
+ \\___)=(___/` },
+];
+
+        function initScratchCard() {
+            const animal = ASCII_ANIMALS[Math.floor(Math.random() * ASCII_ANIMALS.length)];
+            document.getElementById('ascii-art').textContent = animal.art;
+
+            const nameEl = document.getElementById('animal-name');
+            nameEl.textContent = '';
+            nameEl.classList.add('hidden');
+
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.globalCompositeOperation = 'source-over';
+
+            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grad.addColorStop(0, '#8e8e8e');
+            grad.addColorStop(0.5, '#b0b0b0');
+            grad.addColorStop(1, '#8e8e8e');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('scratch me', canvas.width / 2, canvas.height / 2 + 5);
+
+            ctx.globalCompositeOperation = 'destination-out';
+
+            let scratching = false;
+            let revealed = false;
+            const totalPixels = canvas.width * canvas.height;
+
+            function checkReveal() {
+                if (revealed) return;
+                const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                let cleared = 0;
+                for (let i = 3; i < pixels.length; i += 4) {
+                    if (pixels[i] === 0) cleared++;
+                }
+                if (cleared / totalPixels >= 0.6) {
+                    revealed = true;
+                    nameEl.textContent = 'Your secret animal: ' + animal.name + '!';
+                    nameEl.classList.remove('hidden');
+                }
+            }
+
+            let scratchCount = 0;
+            function scratch(x, y) {
+                ctx.beginPath();
+                ctx.arc(x, y, 18, 0, Math.PI * 2);
+                ctx.fill();
+                scratchCount++;
+                if (scratchCount % 15 === 0) checkReveal();
+            }
+
+            function getPos(e) {
+                const r = canvas.getBoundingClientRect();
+                const touch = e.touches ? e.touches[0] : e;
+                return { x: touch.clientX - r.left, y: touch.clientY - r.top };
+            }
+
+            canvas.onmousedown  = (e) => { scratching = true; const p = getPos(e); scratch(p.x, p.y); };
+            canvas.onmousemove  = (e) => { if (!scratching) return; const p = getPos(e); scratch(p.x, p.y); };
+            canvas.onmouseup    = () => { scratching = false; };
+            canvas.onmouseleave = () => { scratching = false; };
+
+            canvas.ontouchstart = (e) => { e.preventDefault(); scratching = true; const p = getPos(e); scratch(p.x, p.y); };
+            canvas.ontouchmove  = (e) => { e.preventDefault(); if (!scratching) return; const p = getPos(e); scratch(p.x, p.y); };
+            canvas.ontouchend   = () => { scratching = false; };
+        }
+
+        /* ── Main analyze function ───────────────────── */
+        async function analyzeArgument() {
+            const argumentText = document.getElementById('argument-input').value.trim();
+            
+            if (!argumentText) {
+                alert('Please enter an argument to analyze.');
+                return;
+            }
+
+            const wc = countWords(argumentText);
+            if (wc > MAX_WORDS) {
+                showError(`Too long: ${wc} words. Please keep it under ${MAX_WORDS} words.`);
+                return;
+            }
+
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('results').classList.remove('results-visible');
+            document.getElementById('error').classList.add('hidden');
+
+            startProgress();
+            initScratchCard();
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ argument: argumentText })
+                });
+
+                const data = await response.json();
+
+                stopProgress();
+
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.error || 'An error occurred during analysis.');
+                }
+            } catch (error) {
+                stopProgress();
+                showError('Failed to connect to the server. Please try again.');
+            }
+        }
+
+        function displayResults(data) {
+            // Display score
+            const composite = data.score;
+            const breakdown = data.score_breakdown || {};
+            const dim = breakdown.dimension_scores || {};
+            const biasScore = typeof dim.bias_score === 'number' ? dim.bias_score : (100 - (breakdown.total_penalty || 0));
+            const testability = typeof dim.testability_score === 'number' ? dim.testability_score : (breakdown.razor_alignment || 0);
+            const logicScore = typeof dim.logic_score === 'number' ? dim.logic_score : (breakdown.logic_integrity_score || 0);
+
+            document.getElementById('score-value').textContent = composite;
+            document.getElementById('score-sub').textContent = `${composite} / 100`;
+            updateScoreCircle('score-circle', composite);
+
+            // Update bias, testability, and logic circles
+            document.getElementById('bias-value').textContent = Math.round(biasScore);
+            updateScoreCircle('circle-bias', biasScore);
+
+            document.getElementById('test-value').textContent = Math.round(testability);
+            updateScoreCircle('circle-test', testability);
+
+            document.getElementById('logic-value').textContent = Math.round(logicScore);
+            updateScoreCircle('circle-logic', logicScore);
+
+            // Status label & message from backend analytics
+            if (data.score_breakdown) {
+                document.getElementById('score-status-label').textContent = data.score_breakdown.status_label || '';
+                document.getElementById('score-status-text').textContent = data.score_breakdown.status_message || '';
+            } else {
+                document.getElementById('score-status-label').textContent = '';
+                document.getElementById('score-status-text').textContent = '';
+            }
+
+            // Logic snapshot chips (directly from metadata/logic variables)
+            const chipsEl = document.getElementById('logic-snapshot-chips');
+            const lv = (breakdown && breakdown.logic_variables) ? breakdown.logic_variables : {};
+            const metadata = Array.isArray(data.metadata) ? data.metadata : [];
+            const claimCount = metadata.length;
+            const assumptionCount = Number(lv.assumption_count || 0);
+            const ifThenCount = Number(lv.if_then_count || 0);
+            const contradictionSignals = Number(lv.contradiction_signals || 0);
+            const contradictionIndex = Math.round(Number(lv.contradiction_index || 0));
+            const overclaimPenalty = Math.round(Number(lv.overclaim_penalty || 0));
+            const boundaryClarity = Math.round(Number(lv.assumption_boundary_clarity || 0));
+
+            const consistencyBand = contradictionIndex >= 65
+                ? 'inconsistent'
+                : (contradictionIndex >= 35 ? 'partly consistent' : 'consistent');
+            const certaintyBand = overclaimPenalty >= 70
+                ? 'claim certainty is overstated'
+                : (overclaimPenalty >= 40 ? 'claim certainty may be stretched' : 'claim certainty is calibrated');
+            const ifThenBand = ifThenCount >= 2
+                ? 'good if/then structure'
+                : (ifThenCount === 1 ? 'some if/then structure' : 'little if/then structure');
+            const boundaryBand = boundaryClarity >= 70
+                ? 'high assumption clarity'
+                : (boundaryClarity >= 40 ? 'medium assumption clarity' : 'low assumption clarity');
+
+            const chipValues = [
+                `Claims analyzed: ${claimCount}`,
+                `Assumptions made explicit: ${assumptionCount}`,
+                `If/then links: ${ifThenCount} - ${ifThenBand}`,
+                `Contradictions flagged: ${contradictionSignals}`,
+                `Internal consistency: ${consistencyBand}`,
+                `Certainty vs evidence: ${certaintyBand}`,
+                `Assumption clarity: ${boundaryClarity}% - ${boundaryBand}`
+            ];
+            chipsEl.innerHTML = '';
+            chipValues.forEach(txt => {
+                const chip = document.createElement('div');
+                chip.className = 'logic-chip';
+                chip.textContent = txt;
+                chipsEl.appendChild(chip);
+            });
+
+            // Executive summary
+            const execSentence = data.detected_issues.executive_summary_sentence || '';
+            document.getElementById('exec-sentence').textContent = execSentence ? execSentence : 'No executive summary returned.';
+            const bullets = Array.isArray(data.detected_issues.executive_summary_bullets) ? data.detected_issues.executive_summary_bullets : [];
+            const bulletsEl = document.getElementById('exec-bullets');
+            bulletsEl.innerHTML = '';
+            bullets.slice(0, 6).forEach(b => {
+                const li = document.createElement('li');
+                li.textContent = b;
+                bulletsEl.appendChild(li);
+            });
+
+            // Display top-N detected issues on the main cards
+            const allFallacies = data.detected_issues.logical_fallacies || [];
+            const allBiases = data.detected_issues.cognitive_biases || [];
+            const allDistortions = data.detected_issues.cognitive_distortions || [];
+
+            displayIssueObjects('fallacies-list', allFallacies.slice(0, 3), 'penalty');
+            displayIssueObjects('biases-list', allBiases.slice(0, 3), 'penalty');
+            displayIssueObjects('distortions-list', allDistortions.slice(0, 2), 'penalty');
+            displayRazorObjects('razors-list', data.detected_issues.philosophical_razors);
+
+            // Update category counts
+            document.getElementById('fallacies-count').textContent = allFallacies.length ? `(${allFallacies.length} detected)` : '';
+            document.getElementById('biases-count').textContent = allBiases.length ? `(${allBiases.length} detected)` : '';
+            document.getElementById('distortions-count').textContent = allDistortions.length ? `(${allDistortions.length} detected)` : '';
+
+            // Show "View all" section when there are detected issues
+            const totalIssues = allFallacies.length + allBiases.length + allDistortions.length;
+            const allSection = document.getElementById('all-issues-section');
+            const toggleBtn = document.getElementById('toggle-all-btn');
+            if (totalIssues > 0) {
+                allSection.classList.remove('hidden');
+                // Cap each list at 20 total across all categories
+                const CAP = 20;
+                let remaining = CAP;
+                const capF = allFallacies.slice(0, remaining); remaining -= capF.length;
+                const capB = allBiases.slice(0, remaining);    remaining -= capB.length;
+                const capD = allDistortions.slice(0, remaining);
+                displayIssueObjects('all-fallacies-list', capF, 'penalty');
+                displayIssueObjects('all-biases-list', capB, 'penalty');
+                displayIssueObjects('all-distortions-list', capD, 'penalty');
+                // Store total in data attribute and reset expand state
+                toggleBtn.dataset.total = `(${totalIssues} total)`;
+                toggleBtn.textContent = `▸ View all detected issues (${totalIssues} total)`;
+                document.getElementById('all-issues-body').classList.add('hidden');
+            } else {
+                allSection.classList.add('hidden');
+            }
+
+            // Display argument quote (truncated to 300 words)
+            const argText = document.getElementById('argument-input').value.trim();
+            const words = argText.split(/\s+/);
+            const truncated = words.length > 300 ? words.slice(0, 300).join(' ') + '...' : argText;
+            document.getElementById('argument-quote-text').textContent = truncated;
+
+            // Display improvement suggestions
+            const improvSection = document.getElementById('improvements-section');
+            const improvList = document.getElementById('improvements-list');
+            improvList.innerHTML = '';
+            const improvements = data.improvements || [];
+            if (improvements.length > 0) {
+                improvSection.classList.remove('hidden');
+                improvements.forEach(s => {
+                    const li = document.createElement('li');
+                    li.textContent = s;
+                    improvList.appendChild(li);
+                });
+            } else {
+                improvSection.classList.add('hidden');
+            }
+
+            currentAnalysisId = data.analysis_id || null;
+
+            // Show results with smooth entrance (loading section stays visible above)
+            const resultsEl = document.getElementById('results');
+            resultsEl.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                resultsEl.classList.add('results-visible');
+                resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        }
+
+        function displayIssueObjects(elementId, issues, valueField) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+
+            if (!issues || issues.length === 0) {
+                element.innerHTML = '<p class="no-issues">None detected</p>';
+                return;
+            }
+
+            issues.forEach(issue => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'issue-item';
+
+                const title = document.createElement('div');
+                title.className = 'issue-title';
+                title.textContent = issue.name || prettifyKey(issue.key || '');
+
+                const meta = document.createElement('div');
+                meta.className = 'issue-meta';
+                meta.textContent = '';
+
+                const reason = document.createElement('div');
+                reason.className = 'issue-reason';
+                reason.textContent = issue.reason ? issue.reason : '';
+
+                const definition = document.createElement('div');
+                definition.className = 'issue-definition';
+                if (issue.description) {
+                    definition.innerHTML = `<span class="issue-definition-label">Definition:</span> ${escapeHtml(issue.description)}`;
+                }
+
+                if ((issue.key || '') === 'none') {
+                    wrapper.classList.add('none');
+                    meta.textContent = '';
+                    reason.textContent = '';
+                    definition.textContent = '';
+                }
+
+                wrapper.appendChild(title);
+                if (meta.textContent) wrapper.appendChild(meta);
+                if (reason.textContent) wrapper.appendChild(reason);
+                if (definition.textContent || definition.innerHTML) wrapper.appendChild(definition);
+                element.appendChild(wrapper);
+            });
+        }
+
+        function displayRazorObjects(elementId, razors) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+
+            if (!razors || razors.length === 0) {
+                element.innerHTML = '<p class="no-issues">No razors returned</p>';
+                return;
+            }
+
+            razors.forEach(r => {
+                const wrapper = document.createElement('div');
+                wrapper.className = r.pass ? 'razor-item pass' : 'razor-item fail';
+
+                const top = document.createElement('div');
+                top.className = 'razor-top';
+
+                const name = document.createElement('div');
+                name.className = 'razor-name';
+                name.textContent = r.name || prettifyKey(r.key || '');
+
+                const badge = document.createElement('div');
+                badge.className = r.pass ? 'badge pass' : 'badge fail';
+                badge.textContent = r.pass ? 'PASS' : 'FAIL';
+
+                top.appendChild(name);
+                top.appendChild(badge);
+
+                const reason = document.createElement('div');
+                reason.className = 'razor-reason';
+                reason.textContent = r.reason ? r.reason : '';
+
+                const definition = document.createElement('div');
+                definition.className = 'razor-definition';
+                if (r.description) {
+                    definition.innerHTML = `<span class="issue-definition-label">Definition:</span> ${escapeHtml(r.description)}`;
+                }
+
+                wrapper.appendChild(top);
+                if (reason.textContent) wrapper.appendChild(reason);
+                if (definition.textContent || definition.innerHTML) wrapper.appendChild(definition);
+                element.appendChild(wrapper);
+            });
+        }
+
+        // ── PDF download ──
+        // ── Share menu ──
+        function openShareMenu() {
+            const menu = document.getElementById('share-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('share-menu');
+            const btn = document.getElementById('share-btn');
+            if (menu && !menu.contains(e.target) && e.target !== btn) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        function _captureSnapshot() {
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'background:#fff;padding:24px 28px;border-radius:16px;display:inline-block;max-width:600px;font-family:Segoe UI,Tahoma,sans-serif;';
+
+            // Brand header
+            const brand = document.createElement('div');
+            brand.style.cssText = 'text-align:center;font-weight:900;font-size:14px;color:#111;margin-bottom:16px;';
+            brand.innerHTML = 'de-cognition: argument analyser';
+            wrapper.appendChild(brand);
+
+            // Clone scores row
+            const scoresClone = document.querySelector('.scores-row').cloneNode(true);
+            scoresClone.style.marginBottom = '12px';
+            wrapper.appendChild(scoresClone);
+
+            // Clone interpretation row
+            const interpClone = document.querySelector('.interp-row').cloneNode(true);
+            interpClone.style.marginBottom = '12px';
+            wrapper.appendChild(interpClone);
+
+            // Add argument quote (truncated to 300 words)
+            const argText = document.getElementById('argument-quote-text')?.textContent || '';
+            if (argText) {
+                const quoteDiv = document.createElement('div');
+                quoteDiv.style.cssText = 'background:#f7f8fb;border:1px solid #e0e0e0;border-radius:10px;padding:12px 14px;font-size:12px;color:#444;line-height:1.45;';
+                const label = document.createElement('div');
+                label.style.cssText = 'font-weight:700;font-size:11px;color:#111;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;';
+                label.textContent = 'Argument analysed';
+                quoteDiv.appendChild(label);
+                const text = document.createElement('div');
+                text.textContent = argText;
+                quoteDiv.appendChild(text);
+                wrapper.appendChild(quoteDiv);
+            }
+
+            // Footer
+            const footer = document.createElement('div');
+            footer.style.cssText = 'text-align:center;font-size:10px;color:#999;margin-top:14px;';
+            footer.textContent = 'cognitiontoday.com';
+            wrapper.appendChild(footer);
+
+            document.body.appendChild(wrapper);
+            return html2canvas(wrapper, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+                document.body.removeChild(wrapper);
+                return canvas;
+            });
+        }
+
+        function shareDownloadImage() {
+            if (!_requireAnalysis()) return;
+            _captureSnapshot().then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'de-cognition-analysis.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+            document.getElementById('share-menu').classList.add('hidden');
+        }
+
+        function _getShareUrl() {
+            if (!currentAnalysisId) return null;
+            return `${window.location.origin}/analysis/${currentAnalysisId}`;
+        }
+
+        function _getShareText() {
+            const label = document.getElementById('score-status-label')?.textContent || '';
+            const score = document.getElementById('score-value')?.textContent || '';
+            if (label) return `de-cognition: find errors in opinions — ${label} (${score}/100)`;
+            return 'de-cognition: find errors in opinions';
+        }
+
+        function _requireAnalysis() {
+            if (!currentAnalysisId) {
+                alert('Analyze an argument first.');
+                document.getElementById('share-menu').classList.add('hidden');
+                return false;
+            }
+            return true;
+        }
+
+        function shareToTwitter() {
+            if (!_requireAnalysis()) return;
+            const url = _getShareUrl();
+            const text = _getShareText();
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+            document.getElementById('share-menu').classList.add('hidden');
+        }
+
+        function shareToLinkedIn() {
+            if (!_requireAnalysis()) return;
+            const url = _getShareUrl();
+            window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+            document.getElementById('share-menu').classList.add('hidden');
+        }
+
+        function shareToFacebook() {
+            if (!_requireAnalysis()) return;
+            const url = _getShareUrl();
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+            document.getElementById('share-menu').classList.add('hidden');
+        }
+
+        function shareLink() {
+            if (!_requireAnalysis()) return;
+            const url = _getShareUrl();
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Share link copied!');
+            }).catch(() => {
+                prompt('Copy this link:', url);
+            });
+            document.getElementById('share-menu').classList.add('hidden');
+        }
+
+        // ── Subscribe ──
+        async function handleSubscribe(e) {
+            e.preventDefault();
+            const inlineInput = document.getElementById('subscribe-email-inline');
+            const legacyInput = document.getElementById('subscribe-email');
+            const email = (inlineInput ? inlineInput.value.trim() : '') ||
+                          (legacyInput ? legacyInput.value.trim() : '');
+            if (!email) return;
+
+            try {
+                const res = await fetch('/api/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    isSubscribed = true;
+                    MAX_WORDS = data.max_words || 2000;
+                    document.getElementById('inline-subscribe').classList.add('hidden');
+                    document.getElementById('inline-subscribed-badge').classList.remove('hidden');
+                    const oldWrap = document.getElementById('subscribe-form-wrap');
+                    if (oldWrap) oldWrap.classList.add('hidden');
+                    const oldBadge = document.getElementById('subscribed-badge');
+                    if (oldBadge) oldBadge.classList.remove('hidden');
+                    updateWordCounter();
+                } else {
+                    alert(data.error || 'Subscription failed.');
+                }
+            } catch {
+                alert('Could not reach server.');
+            }
+        }
+
+        function updateScoreCircle(elementId, score) {
+            const circle = document.getElementById(elementId);
+            if (!circle) return;
+            const percentage = Math.max(0, Math.min(100, score));
+            const angle = percentage * 3.6;
+            
+            // Update color based on score
+            let color = '#F44336';
+            if (score >= 70) {
+                color = '#4CAF50';
+            } else if (score >= 30) {
+                color = '#FF9800';
+            } else {
+                color = '#F44336';
+            }
+
+            circle.style.setProperty('--ring-color', color);
+            circle.style.background = `conic-gradient(${color} ${angle}deg, #eaeaea 0deg)`;
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('error');
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+        }
+
+        function prettifyKey(key) {
+            return (key || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        function countWords(text) {
+            if (!text) return 0;
+            return text.trim().split(/\s+/).filter(Boolean).length;
+        }
+
+        function updateWordCounter() {
+            const text = document.getElementById('argument-input').value;
+            const wc = countWords(text);
+            const el = document.getElementById('word-counter');
+            el.textContent = `${wc} / ${MAX_WORDS} words`;
+            el.classList.toggle('over', wc > MAX_WORDS);
+        }
+
+        function computeTop2Issues(detected) {
+            const all = []
+                .concat(detected.logical_fallacies || [])
+                .concat(detected.cognitive_biases || [])
+                .concat(detected.cognitive_distortions || []);
+
+            const filtered = all
+                .filter(x => x && x.key && x.key !== 'none')
+                .map(x => ({
+                    key: x.key,
+                    name: x.name || prettifyKey(x.key),
+                    penalty: Math.abs(Number(x.penalty || 0))
+                }))
+                .sort((a, b) => b.penalty - a.penalty);
+
+            // Unique by key, then take 2
+            const seen = new Set();
+            const out = [];
+            for (const it of filtered) {
+                if (seen.has(it.key)) continue;
+                seen.add(it.key);
+                out.push(it);
+                if (out.length === 2) break;
+            }
+            return out;
+        }
+
+        function toggleAllIssues() {
+            const body = document.getElementById('all-issues-body');
+            const btn = document.getElementById('toggle-all-btn');
+            const total = btn.dataset.total || '';
+            const isHidden = body.classList.toggle('hidden');
+            btn.textContent = isHidden
+                ? `▸ View all detected issues ${total}`
+                : `▾ Hide full list ${total}`;
+        }
+
+        function openInfoModal() {
+            document.getElementById('info-modal').classList.remove('hidden');
+        }
+
+        function closeInfoModal() {
+            document.getElementById('info-modal').classList.add('hidden');
+        }
+
+        // Allow Enter key to submit (Ctrl+Enter or Cmd+Enter)
+        document.getElementById('argument-input').addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                analyzeArgument();
+            }
+        });
+
+        document.getElementById('argument-input').addEventListener('input', updateWordCounter);
+        updateWordCounter();
+    </script>
+
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <div class="footer-col footer-brand">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Cognition Today" class="footer-logo">
+                <p class="footer-tagline">Science-backed tools for clearer thinking.</p>
+                <div class="footer-socials">
+                    <a href="https://cognitiontoday.com" target="_blank" rel="noopener">Website</a>
+                    <a href="https://www.linkedin.com/in/aditya-shukla-1b8614ba/" target="_blank" rel="noopener">LinkedIn</a>
+                </div>
+                <p class="footer-copy">&copy; 2026 Cognition Today</p>
+            </div>
+            <div class="footer-col footer-discover">
+                <h4 class="footer-heading">Discover Cognition Today</h4>
+                <div class="footer-discover-grid">
+                    <div class="footer-subcol">
+                        <h5 class="footer-subheading">Featured Blogs</h5>
+                        <ul class="footer-links">
+                            <li><a href="https://cognitiontoday.com/category/mental-health/" target="_blank" rel="noopener">Articles on Mental Health</a></li>
+                            <li><a href="https://cognitiontoday.com/category/cognition/" target="_blank" rel="noopener">Articles on Cognition</a></li>
+                            <li><a href="https://cognitiontoday.com/category/artificial-intelligence/" target="_blank" rel="noopener">Articles on AI</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-subcol">
+                        <h5 class="footer-subheading">Interactive</h5>
+                        <ul class="footer-links">
+                            <li><a href="https://cognitiontoday.com/can-you-spot-these-cognitive-biases/" target="_blank" rel="noopener">Cognitive Bias Quiz</a></li>
+                            <li><a href="https://cognitiontoday.com/critical-thinking-test-and-foundations-of-critical-thinking/" target="_blank" rel="noopener">Critical Thinking Quiz</a></li>
+                            <li><a href="https://cognitiontoday.com/de-cognition-argument_analyzer" target="_blank" rel="noopener">About This App</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+

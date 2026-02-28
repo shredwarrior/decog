@@ -1,0 +1,522 @@
+About the Argument Analyzer — by Cognition Today
+
+Every argument carries hidden fingerprints: reasoning shortcuts, emotional
+reflexes, structural blind spots. Most of us never see them. The Argument
+Analyzer is a tool that makes those fingerprints visible.
+
+You paste an argument, opinion, or conclusion. The system extracts structural
+and epistemic hints from the text — things like how specific the claims are,
+whether evidence is present, how large the inferential leaps are, and what
+kinds of examples are used. Those hints guide a deeper analysis that checks
+the argument against a curated taxonomy of reasoning errors and philosophical
+stress-tests. The result is a scored breakdown showing where the argument is
+strong and where it breaks down.
+
+Three scores are generated. An Issue Score reflects the severity of detected
+reasoning errors — the more numerous and serious they are, the weaker the
+argument. A Razor Score reflects how well the argument holds up against
+foundational principles of sound reasoning — testability, evidence
+sufficiency, simplicity. A Composite Score combines both into an overall
+argument-strength rating, weighted so that penalties for real errors outweigh
+rewards for structural soundness. Short, vacuous inputs are penalized
+further; a three-word slogan cannot earn the same credibility as a developed
+argument.
+
+Below is every category the analyzer evaluates, with definitions and examples
+of how to fix them.
+
+
+═══════════════════════════════════════════════════
+I. LOGICAL FALLACIES
+═══════════════════════════════════════════════════
+
+Logical fallacies are structural flaws in reasoning. An argument can sound
+persuasive and still be logically broken. The analyzer checks for the
+following.
+
+
+Ad Hominem
+Attacking the person making the argument rather than the argument itself.
+  Example: "You can't trust his climate data — he didn't even finish college."
+  → Fix: Address the claims directly instead of the person behind them.
+  → Fix: Replace character attacks with evidence-based counterpoints.
+
+Strawman
+Misrepresenting someone's argument to make it easier to attack.
+  Example: "So you're saying we should just let criminals walk free?" (when the person argued for sentencing reform, not abolition).
+  → Fix: Restate the opposing position accurately before critiquing it.
+  → Fix: Quote or paraphrase the original claim faithfully.
+
+Appeal to Nature
+Arguing something is good or right because it is "natural" (or bad because it
+is "unnatural").
+  Example: "Herbal remedies are safer than pharmaceuticals because they come from nature."
+  → Fix: Provide empirical evidence rather than relying on what is "natural."
+  → Fix: Acknowledge that natural does not automatically mean beneficial.
+
+False Dilemma
+Presenting only two options when more exist.
+  Example: "You're either with us or against us."
+  → Fix: Acknowledge additional alternatives or a spectrum of possibilities.
+  → Fix: Reframe the argument to consider middle-ground positions.
+
+Slippery Slope
+Arguing that one thing will lead to a chain of negative events without
+evidence.
+  Example: "If we allow students to redo one test, soon they'll expect to redo every assignment and nobody will study."
+  → Fix: Provide evidence for each step in the causal chain.
+  → Fix: Limit the claim to the immediate, demonstrable consequence.
+
+Begging the Question (Circular Reasoning)
+Assuming the conclusion in the premises — a claim proves itself.
+  Example: "Free will is an illusion because all of our choices are predetermined."
+  → Fix: Support the conclusion with independent premises.
+  → Fix: Introduce external evidence that stands on its own.
+
+Appeal to Authority
+Using an authority figure as evidence without proper justification.
+  Example: "A famous actor endorsed this diet, so it must be healthy."
+  → Fix: Cite the actual data or study the authority relies on.
+  → Fix: Ensure the authority is a credible expert in the relevant field.
+
+Appeal to Ignorance
+Claiming something is true (or false) because it has not been proven
+otherwise.
+  Example: "Nobody has proven that ghosts don't exist, so they must be real."
+  → Fix: Present positive evidence for the claim instead of citing absence of
+    disproof.
+  → Fix: Acknowledge what is currently unknown and propose how it could be
+    tested.
+
+Hasty Generalization
+Drawing a conclusion from insufficient evidence.
+  Example: "I met two rude people from that city, so everyone there must be rude."
+  → Fix: Provide a larger or more representative sample before generalizing.
+  → Fix: Qualify the claim: "some" or "in certain cases" rather than "all."
+
+Post Hoc Ergo Propter Hoc
+Assuming causation from correlation — "this happened after that, so that
+caused this."
+  Example: "I wore my lucky socks and we won the game — the socks caused the win."
+  → Fix: Present a plausible causal mechanism, not just temporal sequence.
+  → Fix: Cite controlled studies that isolate the causal variable.
+
+Appeal to Emotion
+Using emotional manipulation instead of logical reasoning.
+  Example: "Think of the children — how can you possibly support this policy?"
+  → Fix: Replace emotional appeals with factual evidence.
+  → Fix: Separate emotional framing from the core claim so each stands
+    independently.
+
+Bandwagon (Appeal to Popularity)
+Arguing something is true or good because many people believe it.
+  Example: "Millions of people use this supplement, so it clearly works."
+  → Fix: Provide evidence beyond popularity to support the claim.
+  → Fix: Explain why the claim is correct on its own merits.
+
+False Cause
+Incorrectly identifying the cause of an event or outcome.
+  Example: "Crime went down after the new mayor took office, so the mayor reduced crime." (ignoring a national trend)
+  → Fix: Identify and rule out alternative explanations.
+  → Fix: Reference studies with proper controls.
+
+Red Herring
+Introducing irrelevant information to distract from the main argument.
+  Example: "Why worry about the company's pollution record when they donate so much to charity?"
+  → Fix: Remove tangential points and stay focused on the central claim.
+  → Fix: Ensure every supporting point relates to the main thesis.
+
+Appeal to Tradition
+Arguing something is right because it has been done that way for a long time.
+  Example: "We've always hired through referrals — there's no reason to change the process."
+  → Fix: Explain why the tradition is effective based on evidence, not
+    longevity.
+  → Fix: Consider whether circumstances have changed since the tradition
+    began.
+
+No True Scotsman
+Changing the definition to exclude counterexamples to a universal claim.
+  Example: "No real entrepreneur would take a salary — those people are just employees with fancy titles."
+  → Fix: Define terms clearly upfront and stick to those definitions.
+  → Fix: Accept counterexamples and narrow the claim rather than redefining
+    it.
+
+Tu Quoque
+Dismissing criticism because the critic is allegedly guilty of the same
+thing.
+  Example: "You can't tell me to eat healthy — I saw you eating pizza last week."
+  → Fix: Evaluate the criticism on its own merits regardless of the critic.
+  → Fix: Address the substance of the objection with evidence.
+
+
+═══════════════════════════════════════════════════
+II. COGNITIVE BIASES
+═══════════════════════════════════════════════════
+
+Cognitive biases are systematic thinking shortcuts that can skew judgment
+without the person realizing it. Unlike fallacies, which are errors in
+argument structure, biases operate beneath conscious awareness and shape how
+evidence is selected, weighted, and interpreted.
+
+
+Confirmation Bias
+Favoring information that confirms existing beliefs.
+  Example: "Every article I read agrees that coffee is healthy" — after only searching for "benefits of coffee."
+  → Fix: Actively seek out evidence that contradicts the conclusion.
+  → Fix: Cite sources from opposing viewpoints and explain why the argument
+    still holds.
+
+Belief Perseverance
+Holding onto beliefs even after the evidence supporting them is discredited.
+  Example: "I still think that study was right, even though it was retracted for data fabrication."
+  → Fix: Acknowledge when foundational evidence has been weakened.
+  → Fix: State what new evidence would change the conclusion.
+
+Anchoring Bias
+Relying too heavily on the first piece of information encountered.
+  Example: "The first estimate said the project would cost $10K, so $50K feels outrageous" — without examining the actual scope.
+  → Fix: Consider multiple reference points before drawing a conclusion.
+  → Fix: Test the claim against the full range of available data.
+
+Availability Heuristic
+Overestimating the probability of events that are more vivid or recent in
+memory.
+  Example: "Shark attacks are a huge risk at the beach" — because recent news covered one, despite the actual odds being 1 in 3.7 million.
+  → Fix: Supplement vivid examples with base-rate statistics.
+  → Fix: Ask whether the recalled examples are representative of the broader
+    trend.
+
+Hindsight Bias
+Seeing events as predictable after they have already happened.
+  Example: "Obviously the housing market was going to crash in 2008 — all the signs were there."
+  → Fix: Describe what was actually known before the outcome occurred.
+  → Fix: Acknowledge uncertainty and the role of unpredictable factors.
+
+In-group Bias
+Favoring members of one's own group over outsiders.
+  Example: "Our department's proposal is clearly better" — without evaluating the other team's version on the same criteria.
+  → Fix: Evaluate the claim using criteria that apply equally to all groups.
+  → Fix: Include perspectives from outside the in-group.
+
+Dunning-Kruger Effect
+Overestimating one's own ability in a particular area.
+  Example: "I read a few articles about nutrition, so I know more about diets than most doctors."
+  → Fix: Reference domain experts and peer-reviewed sources rather than
+    personal confidence.
+  → Fix: Acknowledge the limits of your own expertise on the topic.
+
+Fundamental Attribution Error
+Overemphasizing personality-based explanations for behavior while
+underweighting situational factors.
+  Example: "He's late because he's lazy" — ignoring that public transit was delayed for an hour.
+  → Fix: Consider systemic or contextual factors that could explain the
+    behavior.
+  → Fix: Avoid attributing outcomes solely to character.
+
+Sunk Cost Fallacy
+Continuing a behavior because of previously invested resources.
+  Example: "I've already spent three years on this degree, so I can't switch even though I hate it."
+  → Fix: Evaluate the claim based on future expected outcomes, not past
+    investment.
+  → Fix: Ask whether you would still support the conclusion if starting fresh.
+
+Negativity Bias
+Giving more weight to negative experiences than positive ones.
+  Example: "The restaurant is terrible" — based on one slow-service visit despite ten great ones.
+  → Fix: Present both positive and negative evidence in balanced proportion.
+  → Fix: Quantify outcomes rather than relying on the emotional weight of
+    negatives.
+
+Self-Serving Bias
+Attributing successes to internal factors and failures to external factors.
+  Example: "I aced the test because I'm smart; I failed the other one because the questions were unfair."
+  → Fix: Apply the same causal standard to successes and failures alike.
+  → Fix: Consider external factors for successes and internal ones for
+    failures.
+
+Optimism Bias
+Overestimating the likelihood of positive outcomes and underestimating
+negatives.
+  Example: "This startup will definitely succeed — most failures happen to other people."
+  → Fix: Include realistic risk assessment and potential downsides.
+  → Fix: Back up optimistic projections with historical base rates.
+
+Survivorship Bias
+Concentrating on successful examples while overlooking failures, leading to
+false conclusions about what causes success.
+  Example: "Bill Gates and Mark Zuckerberg dropped out of college and became billionaires, so college is unnecessary."
+  → Fix: Include failed cases alongside successful ones for a complete
+    picture.
+  → Fix: Ask what the full population looks like, not just the visible
+    survivors.
+
+Egocentric Bias
+Relying too heavily on one's own perspective or recalling events in a
+self-serving manner.
+  Example: "In my experience, remote work is more productive" — generalizing a personal preference to the entire workforce.
+  → Fix: Incorporate third-party perspectives or external data.
+  → Fix: Separate personal experience from objective evidence.
+
+Empathy Gap
+Underestimating the influence of emotional or physical states on one's own or
+others' judgments and decisions.
+  Example: "I can't understand why anyone would panic-sell stocks" — said while calm, not during a market crash.
+  → Fix: Acknowledge how emotional or physical states might color the
+    judgment.
+  → Fix: Revisit the argument in a different emotional state to test its
+    robustness.
+
+Attribute Substitution
+Answering a difficult question by unconsciously substituting it with a
+simpler, related one.
+  Example: Asked "Is this policy effective?" but answering "Do I feel good about this policy?" instead.
+  → Fix: Make the actual question explicit and answer it directly.
+  → Fix: Check that the reasoning addresses the original claim, not a simpler
+    proxy.
+
+Maslow's Hammer
+Over-relying on a familiar tool, framework, or theory and forcing it onto
+situations where it does not fit — "if all you have is a hammer, everything
+looks like a nail."
+  Example: "This is clearly a supply-and-demand issue" — applied to a problem that is actually about regulation, not market forces.
+  → Fix: Consider whether the chosen framework genuinely fits the situation.
+  → Fix: Try explaining the issue through at least one alternative lens
+    before committing to a single theory.
+
+Hypercognition
+Possessing too many categories or concepts for a domain, leading to
+over-classification — seeing distinctions or patterns that are not
+meaningfully present.
+  Example: Labeling a child's normal restlessness as three separate clinical conditions when one explanation suffices.
+  → Fix: Ask whether the fine-grained label adds explanatory value or just
+    jargon.
+  → Fix: Simplify the classification and test whether the broader category
+    explains the evidence just as well.
+
+Russell's Teapot
+Making an unfalsifiable claim and shifting the burden of proof to others to
+disprove it, rather than providing evidence for the claim.
+  Example: "There's an invisible force guiding the market — prove that there isn't."
+  → Fix: Provide positive evidence rather than demanding others disprove it.
+  → Fix: Acknowledge the claim is speculative if no supporting evidence
+    exists.
+
+Symmetry Impulse
+Using symmetry or forced balance to complete judgments — assuming every
+positive must have an equal negative, every pro must have a con, or that both
+sides deserve equal weight regardless of evidence asymmetry.
+  Example: "There are pros and cons to vaccination" — presenting fringe risks as equal in weight to overwhelming evidence of efficacy.
+  → Fix: Check whether the evidence actually supports equal weight on both
+    sides.
+  → Fix: Let the evidence determine the proportions rather than imposing
+    artificial symmetry.
+
+Proportionality Bias (Major Event / Major Cause)
+Assuming that the magnitude of a cause must match the magnitude of its
+effect — large events must have large causes, and small causes cannot produce
+large outcomes. This drives conspiracy thinking and dismissal of simple
+explanations for significant events.
+  Example: "A lone individual couldn't have caused that much disruption — there must have been a larger conspiracy."
+  → Fix: Consider that small causes can have large effects through cascading
+    mechanisms.
+  → Fix: Evaluate the causal chain on its own merits rather than matching
+    cause size to effect size.
+
+
+═══════════════════════════════════════════════════
+III. COGNITIVE DISTORTIONS
+═══════════════════════════════════════════════════
+
+Cognitive distortions are inaccurate thought patterns, often driven by
+emotion rather than evidence. They warp how a person interprets events and
+can embed themselves in arguments without the arguer noticing.
+
+
+All-or-Nothing Thinking
+Viewing situations in black and white categories with no middle ground.
+  Example: "If I don't get a perfect score, the entire effort was a waste."
+  → Fix: Introduce degrees or a spectrum instead of absolute categories.
+  → Fix: Use qualifying language: "tends to" or "in most cases" rather than
+    "always/never."
+
+Overgeneralization
+Seeing a single negative event as a never-ending pattern.
+  Example: "I got rejected from one job — I'll never get hired anywhere."
+  → Fix: Limit the conclusion to the specific case rather than extrapolating
+    universally.
+  → Fix: Provide additional data points before claiming a pattern.
+
+Mental Filter
+Focusing exclusively on negative details while filtering out positive
+aspects.
+  Example: "The presentation was a disaster" — fixating on one stumbled answer while ignoring twenty minutes of strong delivery.
+  → Fix: Include positive or neutral evidence alongside the negative.
+  → Fix: Present a balanced view by acknowledging what supports the opposing
+    conclusion.
+
+Discounting the Positive
+Rejecting positive experiences by insisting they "don't count."
+  Example: "Sure, I got promoted, but that's only because nobody else wanted the role."
+  → Fix: Explain why positive evidence is being discounted with objective
+    criteria.
+  → Fix: Weight positive data the same way as negative data.
+
+Catastrophizing
+Expecting the worst possible outcome.
+  Example: "If I make one mistake on this project, I'll get fired and never work again."
+  → Fix: Assess the realistic probability of the worst-case scenario with
+    data.
+  → Fix: Present a range of likely outcomes, not just the extreme negative.
+
+Emotional Reasoning
+Believing that negative feelings reflect reality — "I feel it, so it must be
+true."
+  Example: "I feel like this investment is wrong, so the numbers must be off somehow."
+  → Fix: Separate how you feel about the claim from what the evidence shows.
+  → Fix: Ground the argument in observable facts rather than emotional
+    reactions.
+
+Mind Reading
+Assuming you know what others are thinking without sufficient evidence.
+  Example: "She didn't reply to my email — she obviously thinks my idea is stupid."
+  → Fix: Replace assumptions about others' thoughts with their stated
+    positions.
+  → Fix: Cite direct quotes, surveys, or behavioral data instead of imputed
+    motives.
+
+Fortune Telling
+Predicting negative outcomes as if they are facts.
+  Example: "There's no point applying — they'll definitely reject me."
+  → Fix: Present predictions as possibilities, not certainties.
+  → Fix: Support forecasts with trend data or expert consensus.
+
+Should Statements
+Using "should" or "must" statements that set unrealistic expectations.
+  Example: "People should always put the group's needs before their own."
+  → Fix: Replace prescriptive "should" language with descriptive reasoning
+    about trade-offs.
+  → Fix: Explain the rationale behind the expectation rather than asserting
+    obligation.
+
+Magnification / Minimization
+Blowing negative things out of proportion or shrinking positives.
+  Example: "One typo in my report is humiliating, but the client's praise doesn't mean much."
+  → Fix: Assign proportional weight to evidence based on its actual
+    significance.
+  → Fix: Use data to calibrate the magnitude of positives and negatives
+    objectively.
+
+Labeling
+Attaching negative labels to oneself or others instead of describing specific
+behavior.
+  Example: "He's a total fraud" — instead of "He exaggerated his credentials on one occasion."
+  → Fix: Describe specific behaviors or evidence instead of attaching labels.
+  → Fix: Avoid reductive characterizations and focus on what can be observed.
+
+Personalization
+Assuming responsibility for events outside your control.
+  Example: "The team lost the contract because I didn't speak up enough in the meeting."
+  → Fix: Identify all contributing factors rather than assigning sole
+    responsibility.
+  → Fix: Distinguish between correlation with a person and actual causal
+    responsibility.
+
+
+═══════════════════════════════════════════════════
+IV. PHILOSOPHICAL RAZORS
+═══════════════════════════════════════════════════
+
+Philosophical razors are time-tested principles that evaluate whether an
+argument is epistemically sound — whether it is testable, proportionate, and
+grounded. Passing a razor means the argument meets that standard. Failing one
+means there is a structural gap in how the claim is constructed or
+supported.
+
+
+Occam's Razor
+The simplest explanation is usually the correct one. If two hypotheses
+explain the same evidence, prefer the one with fewer assumptions.
+  Example: "The door is open because the wind blew it" passes; "The door is open because someone broke in, left no trace, and closed the lock behind them" fails.
+  → If failed: Simplify the argument by removing unnecessary assumptions and
+    entities.
+
+Hanlon's Razor
+Do not attribute to malice what can be adequately explained by mistake or
+ignorance. Arguments that assume intent or conspiracy when simpler
+explanations exist fail this test.
+  Example: "The company overcharged me on purpose to cheat me" fails when a billing glitch is the simpler explanation.
+  → If failed: Consider non-malicious explanations before attributing intent.
+
+Hitchens's Razor
+What can be asserted without evidence can be dismissed without evidence.
+Claims that offer no supporting proof have no argumentative weight.
+  Example: "Productivity is higher on Mondays" — stated with no data, surveys, or studies to back it up.
+  → If failed: Back every key assertion with at least one piece of concrete
+    evidence.
+
+Sagan Standard
+Extraordinary claims require extraordinary evidence. The bigger the claim,
+the stronger the proof needs to be.
+  Example: "This supplement cures all chronic disease" requires far more proof than "This supplement reduces mild inflammation in one study."
+  → If failed: Match the strength of your evidence to the scale of your
+    claim.
+
+Newton's Flaming Laser Sword
+If something cannot be settled by experiment or observation, it is not worth
+debating as an empirical claim.
+  Example: "The universe has a hidden purpose" cannot be tested by any observation, so it fails this razor as an empirical claim.
+  → If failed: Propose a concrete way to test or observe the claim.
+
+Popper's Falsifiability
+A claim should be testable and potentially falsifiable to be meaningful as an
+empirical claim. If nothing could possibly disprove it, it is not saying
+anything substantive.
+  Example: "Everything happens for a reason" is unfalsifiable — no outcome could ever disprove it.
+  → If failed: State explicitly what evidence would disprove the claim.
+
+
+═══════════════════════════════════════════════════
+V. HOW SCORING WORKS
+═══════════════════════════════════════════════════
+
+Every argument starts from a baseline score. Detected issues reduce it;
+passing philosophical razors adds a capped reward. The system weighs
+penalties more heavily than rewards — an argument with many biases and
+fallacies cannot recover its score simply by sounding testable.
+
+Detected issues are weighted by severity. Structural fallacies that break
+the logic of an argument carry heavier penalties than subtle biases. Very
+short or vacuous inputs receive an additional penalty because brevity alone
+does not equal strength — a claim must contain enough substance to evaluate.
+
+The analysis prioritizes specificity. When a niche bias (such as
+Survivorship Bias or Symmetry Impulse) better explains the error, it takes
+precedence over a broader parent category. This prevents the system from
+defaulting to generic labels when a more precise diagnosis is available.
+
+Confidence thresholds filter detections. The system does not flag every
+possible issue — only those that meet an internal confidence bar are
+reported. This reduces noise and keeps the analysis focused on what
+genuinely affects the argument.
+
+
+═══════════════════════════════════════════════════
+VI. USING THE RESULTS
+═══════════════════════════════════════════════════
+
+The analyzer is not a lie detector or a truth engine. It evaluates argument
+structure, not factual correctness. A perfectly structured argument can still
+be wrong if its premises are false. A messy argument can still reach the
+right conclusion by luck. What the tool reveals is the quality of the
+reasoning itself.
+
+Use the results to:
+- Identify which parts of your reasoning are weakest.
+- Understand which biases might be operating beneath your awareness.
+- See whether your claim is testable and falsifiable.
+- Get specific, actionable suggestions for strengthening the argument.
+
+The goal is better thinking, not a perfect score.
+
+
+Built by Cognition Today — https://cognitiontoday.com

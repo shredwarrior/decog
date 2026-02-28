@@ -1,0 +1,638 @@
+================================================================================
+  ARGUMENT ANALYSER — SYSTEM LOGIC & TAXONOMY
+================================================================================
+  Document version : 2.2
+  Last updated     : February 2026 (calibration + deduction lane update)
+================================================================================
+
+
+1. OVERVIEW
+────────────────────────────────────────────────────────────────────────────────
+
+  The Argument Analyser is a three-stage pipeline that takes a user's argument
+  (max 300 words; 2,000 for subscribers) and produces:
+
+    - A list of detected logical fallacies
+    - A list of detected cognitive biases
+    - A list of detected cognitive distortions
+    - A pass/fail evaluation for 6 philosophical razors
+    - A composite argument strength score (0–100)
+    - An executive summary
+    - 5 actionable improvement suggestions
+
+  The system uses two primary OpenAI calls plus optional conditional calls,
+  deterministic Python scoring, bias hierarchy / deduplication logic, a
+  substance penalty for very short arguments, and a JSON definition file for
+  all taxonomy items.
+
+
+2. PIPELINE ARCHITECTURE
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  User submits argument (max 300 / 2,000 words)                     │
+  └──────────────────────────┬──────────────────────────────────────────┘
+                             │
+                             ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  CALL 1 — Metadata Extraction  (LLM, temp 0.1)                    │
+  │  ─────────────────────────────────────────────────────────────────  │
+  │  The argument is broken into individual claims.                    │
+  │  Each claim is tagged with 23 structural + epistemic features      │
+  │  (including exemplar_type, forces_balance, proportional_causation).│
+  │  No quality judgments — pure feature extraction.                   │
+  └──────────────────────────┬──────────────────────────────────────────┘
+                             │
+                             ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  METADATA AGGREGATION  (Python, no LLM)                            │
+  │  ─────────────────────────────────────────────────────────────────  │
+  │  Per-claim tags are aggregated into a context summary:             │
+  │    - Structural Profile  (counts of evidence, emotion, etc.)       │
+  │    - Epistemic Profile   (validity, speculation, gaps, etc.)       │
+  │    - Flags               (targeted alerts for the main call)       │
+  │  Includes niche bias nudges (Survivorship, Maslow's Hammer,        │
+  │  Russell's Teapot, Symmetry Impulse, Proportionality Bias).       │
+  └──────────────────────────┬──────────────────────────────────────────┘
+                             │
+                             ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  CALL 2 — Main Analysis  (LLM, temp 0.3)                          │
+  │  ─────────────────────────────────────────────────────────────────  │
+  │  Receives the original argument PLUS the metadata context block.   │
+  │  Detects fallacies, biases, distortions.                           │
+  │  Evaluates all 6 philosophical razors (pass/fail with reasons).    │
+  │  Produces executive summary sentence + bullets.                    │
+  │  Applies bias specificity rules and detection guards.              │
+  └──────────────────────────┬──────────────────────────────────────────┘
+                             │
+                             ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  NORMALIZATION + DEDUPLICATION  (Python, no LLM)                   │
+  │  ─────────────────────────────────────────────────────────────────  │
+  │  - Filters out low-confidence detections                           │
+  │  - Validates keys against definitions.json                         │
+  │  - Ensures all 6 razors are present (fills defaults if missing)    │
+  │  - Attaches names, descriptions, penalties/rewards from JSON       │
+  │  - Runs bias hierarchy deduplication (child → parent umbrella)     │
+  │  - Sorts issues by penalty magnitude (most impactful first)        │
+  └──────────────────────────┬──────────────────────────────────────────┘
+                             │
+                             ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  SCORING  (Python math, no LLM)                                    │
+  │  ─────────────────────────────────────────────────────────────────  │
+  │  Deterministic score from 0–100.                                   │
+  │  Substance penalty for very short arguments.                       │
+  │  Penalties for issues, capped rewards for razors.                  │
+  │  Qualitative status label derived from structure + razor zones.    │
+  └──────────────────────────┬──────────────────────────────────────────┘
+                             │
+                             ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  CALL 2.5 — Short Deduction Hint (LLM, conditional)               │
+  │  ─────────────────────────────────────────────────────────────────  │
+  │  Runs only for short inputs (<= 80 words).                         │
+  │  Detects concise formal deduction quality (math/philosophy style). │
+  │  Returns short-deduction strength used in scoring interpretation.   │
+  └──────────────────────────┬──────────────────────────────────────────┘
+                             │
+                             ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  CALL 3 — Improvement Suggestions  (LLM, temp 0.4)                │
+  │  ─────────────────────────────────────────────────────────────────  │
+  │  Receives the argument text + deterministic improvement hints      │
+  │  from definitions.json for each detected issue / failed razor.     │
+  │  Synthesizes exactly 5 concrete, actionable improvement tips.      │
+  └─────────────────────────────────────────────────────────────────────┘
+
+
+3. METADATA TAXONOMY (CALL 1)
+────────────────────────────────────────────────────────────────────────────────
+
+  Each claim extracted from the argument is tagged with 23 features,
+  divided into three groups.
+
+
+  3.1  STRUCTURAL TAGS (13 features)
+  ··································
+
+  Simple boolean or narrow-enum classifications that describe what the
+  claim does, structurally.
+
+  ┌──────────────────────────┬──────────────────┬───────────────────────────────┐
+  │ Field                    │ Type             │ Description                   │
+  ├──────────────────────────┼──────────────────┼───────────────────────────────┤
+  │ claim_text               │ string           │ Verbatim claim (shortened)    │
+  │ cites_evidence           │ bool             │ References data/studies/facts? │
+  │ evidence_type            │ scientific |     │ What kind of evidence?        │
+  │                          │ anecdotal | none │                               │
+  │ cites_authority          │ bool             │ Names an authority?           │
+  │ authority_named          │ string           │ Who specifically (or empty)   │
+  │ emotional_tone           │ neutral |        │ Emotional register of claim   │
+  │                          │ positive |       │                               │
+  │                          │ negative |       │                               │
+  │                          │ fear | anger     │                               │
+  │ makes_causal_claim       │ bool             │ Asserts X causes Y?           │
+  │ generalizes              │ bool             │ Generalizes from specifics?   │
+  │ uses_absolute_language   │ bool             │ "always", "never", etc.       │
+  │ targets_person           │ bool             │ Attacks person, not point?    │
+  │ assumes_intent           │ bool             │ Attributes motive/malice?     │
+  │ is_falsifiable           │ bool             │ Could be tested/disproven?    │
+  │ is_extraordinary         │ bool             │ Unusual/surprising claim?     │
+  └──────────────────────────┴──────────────────┴───────────────────────────────┘
+
+
+  3.2  EPISTEMIC QUALITY TAGS (8 features)
+  ········································
+
+  Gradient-scale assessments of how epistemically sound each claim is.
+
+  ┌──────────────────────────┬──────────────────┬───────────────────────────────┐
+  │ Field                    │ Type             │ Description                   │
+  ├──────────────────────────┼──────────────────┼───────────────────────────────┤
+  │ face_validity            │ high | medium |  │ Does it seem plausible on its │
+  │                          │ low              │ surface before checking?      │
+  │ speculation_level        │ none | low |     │ How far beyond evidence does  │
+  │                          │ moderate | high  │ the claim reach?              │
+  │ claim_type               │ factual |        │ What category of statement?   │
+  │                          │ historical |     │                               │
+  │                          │ opinion |        │                               │
+  │                          │ prediction |     │                               │
+  │                          │ definition |     │                               │
+  │                          │ moral            │                               │
+  │ evidence_sufficiency     │ strong |         │ How well does cited evidence  │
+  │                          │ moderate |       │ actually support THIS claim?  │
+  │                          │ weak | none      │                               │
+  │ causal_chain_length      │ integer (0–5)    │ How many precursor steps lead │
+  │                          │                  │ to the conclusion?            │
+  │                          │                  │   0 = bare assertion           │
+  │                          │                  │   1 = one reason given         │
+  │                          │                  │   3+ = well-built chain        │
+  │ inferential_gap          │ none | small |   │ Logical leap from evidence    │
+  │                          │ large            │ to conclusion.                │
+  │ specificity              │ high | medium |  │ Concrete and specific, or     │
+  │                          │ low              │ vague?                        │
+  │ verifiability            │ easily |         │ Could a third party check?    │
+  │                          │ with_effort |    │                               │
+  │                          │ not_verifiable   │                               │
+  └──────────────────────────┴──────────────────┴───────────────────────────────┘
+
+
+  3.3  EXEMPLAR & REASONING PATTERN TAGS (2 features)
+  ····················································
+
+  Tags that detect specific reasoning patterns useful for niche bias
+  detection.
+
+  ┌──────────────────────────┬──────────────────┬───────────────────────────────┐
+  │ Field                    │ Type             │ Description                   │
+  ├──────────────────────────┼──────────────────┼───────────────────────────────┤
+  │ exemplar_type            │ population_data |│ What kind of example does the │
+  │                          │ representative_  │ claim rely on?                │
+  │                          │ sample |         │ Enables Survivorship Bias     │
+  │                          │ famous_case |    │ gating — only flags when      │
+  │                          │ anecdote | none  │ cherry-picked cases outweigh  │
+  │                          │                  │ representative data.          │
+  │ forces_balance           │ bool             │ Does the claim impose         │
+  │                          │                  │ artificial symmetry?          │
+  │                          │                  │ E.g. every pro must have a    │
+  │                          │                  │ con, despite evidence          │
+  │                          │                  │ favouring one side.           │
+  │                          │                  │ Drives Symmetry Impulse       │
+  │                          │                  │ detection.                    │
+  │ proportional_causation   │ bool             │ Does the claim assume cause   │
+  │                          │                  │ magnitude must match effect   │
+  │                          │                  │ magnitude? E.g. "a disaster   │
+  │                          │                  │ this big must be deliberate." │
+  │                          │                  │ Drives Proportionality Bias   │
+  │                          │                  │ detection.                    │
+  └──────────────────────────┴──────────────────┴───────────────────────────────┘
+
+
+4. METADATA AGGREGATION & FLAGS
+────────────────────────────────────────────────────────────────────────────────
+
+  After Call 1 returns per-claim metadata, Python code aggregates it into
+  three sections injected into Call 2's prompt:
+
+  4.1  STRUCTURAL PROFILE
+       Counts of how many claims cite evidence, make causal claims, use
+       emotional tone, absolute language, target persons, are unfalsifiable,
+       extraordinary, generalizing, or assume intent.
+
+  4.2  EPISTEMIC PROFILE
+       Aggregated distributions across all claims:
+       - Face validity breakdown (high / medium / low)
+       - Speculation ratio (grounded vs. speculative)
+       - Evidence sufficiency distribution
+       - Average causal chain length
+       - Inferential gap distribution
+       - Specificity distribution
+       - Verifiability distribution
+       - Claim type breakdown (e.g., "4 factual, 1 historical, 1 opinion")
+
+  4.3  FLAGS (targeted alerts)
+       Conditional warnings and positive signals triggered by the metadata:
+
+       GENERAL WARNING FLAGS (⚑):
+       - Person-targeting detected        → check Ad Hominem / Tu Quoque
+       - Absolute language detected        → check All-or-Nothing / Overgeneralization
+       - Extraordinary claims, no evidence → likely fails Sagan Standard
+       - Unfalsifiable claims              → likely fails Popper's Falsifiability
+       - Majority speculative              → check Hasty Generalization
+       - Multiple large inferential gaps   → check Non Sequitur / Slippery Slope
+       - Causal claims with weak evidence  → check Post Hoc / False Cause
+       - Multiple low face-validity claims → credibility concern
+       - Most claims not verifiable        → weakens credibility
+       - Bare assertions (avg chain < 0.5) → little supporting reasoning
+
+       NICHE BIAS FLAGS (⚑):
+       - Cherry-picked/famous cases + generalizing (gated by exemplar_type)
+                                          → check Survivorship Bias
+       - Intent/motive assumed            → check Empathy Gap / Fund. Attr. Error
+       - Many speculative opinion claims  → check Self-Serving Bias
+       - Vague claims + large leaps       → check Attribute Substitution / Belief Bias
+       - Majority emotional tone          → check Egocentric Bias
+       - Multiple unfalsifiable speculative claims
+                                          → check Russell's Teapot
+       - Causal claims from narrow framework
+                                          → check Maslow's Hammer
+       - Claims impose artificial balance → check Symmetry Impulse
+       - Claims assume cause-effect proportionality
+                                          → check Proportionality Bias (MEMC)
+
+       POSITIVE FLAGS (✓):
+       - Mostly grounded + strong evidence → likely well-supported
+       - Easily verifiable majority        → strengthens testability
+
+
+5. ANALYSIS TAXONOMY (CALL 2 + definitions.json)
+────────────────────────────────────────────────────────────────────────────────
+
+  All items the system can detect are defined in definitions.json. Each has
+  a key, display name, description, and a numeric penalty or reward.
+
+
+  5.1  LOGICAL FALLACIES  (17 items)
+  ··································
+  Errors in reasoning that undermine the argument's logical validity.
+  Each carries a negative penalty applied to the score.
+
+    Key                      Name                                    Penalty
+    ─────────────────────    ──────────────────────────────────────   ───────
+    ad_hominem               Ad Hominem                              -15
+    strawman                 Strawman                                -20
+    appeal_to_nature         Appeal to Nature                        -10
+    false_dilemma            False Dilemma                           -12
+    slippery_slope           Slippery Slope                          -10
+    begging_the_question     Begging the Question (Circular)         -18
+    appeal_to_authority      Appeal to Authority                      -8
+    appeal_to_ignorance      Appeal to Ignorance                     -12
+    hasty_generalization     Hasty Generalization                    -12
+    post_hoc                 Post Hoc Ergo Propter Hoc               -10
+    appeal_to_emotion        Appeal to Emotion                        -8
+    bandwagon                Bandwagon (Appeal to Popularity)        -10
+    false_cause              False Cause                             -10
+    red_herring              Red Herring                             -12
+    appeal_to_tradition      Appeal to Tradition                      -9
+    no_true_scotsman         No True Scotsman                        -12
+    tu_quoque                Tu Quoque                               -10
+
+
+  5.2  COGNITIVE BIASES  (21 items)
+  ·································
+  Systematic patterns of deviation from rational judgment.
+
+    Key                      Name                                    Penalty
+    ─────────────────────    ──────────────────────────────────────   ───────
+    confirmation_bias        Confirmation Bias                       -10
+    belief_perseverance      Belief Perseverance                      -9
+    anchoring_bias           Anchoring Bias                           -8
+    availability_heuristic   Availability Heuristic                   -7
+    hindsight_bias           Hindsight Bias                           -6
+    ingroup_bias             In-group Bias                            -8
+    dunning_kruger           Dunning-Kruger Effect                    -9
+    fundamental_attribution  Fundamental Attribution Error            -8
+    sunk_cost                Sunk Cost Fallacy                       -10
+    negativity_bias          Negativity Bias                          -7
+    self_serving_bias        Self-Serving Bias                        -7
+    optimism_bias            Optimism Bias                            -6
+    survivorship_bias        Survivorship Bias                        -9
+    egocentric_bias          Egocentric Bias                          -8
+    empathy_gap              Empathy Gap                              -7
+    attribute_substitution   Attribute Substitution                   -8
+    maslows_hammer           Maslow's Hammer                          -8
+    hypercognition           Hypercognition                           -7
+    russells_teapot          Russell's Teapot                         -9
+    symmetry_impulse         Symmetry Impulse                         -8
+    proportionality_bias     Proportionality Bias (MEMC)              -8
+
+  Note on bias hierarchy:
+    confirmation_bias is treated as an umbrella parent of:
+      - survivorship_bias
+      - self_serving_bias
+      - belief_bias
+    When a specific child is detected, the parent is injected with zero
+    penalty as a display-only umbrella label to avoid double-counting.
+
+
+  5.3  COGNITIVE DISTORTIONS  (12 items)
+  ······································
+  Patterns of biased thinking that distort perception of reality.
+
+    Key                      Name                                    Penalty
+    ─────────────────────    ──────────────────────────────────────   ───────
+    all_or_nothing           All-or-Nothing Thinking                 -10
+    overgeneralization       Overgeneralization                       -9
+    mental_filter            Mental Filter                            -8
+    discounting_the_positive Discounting the Positive                 -7
+    catastrophizing          Catastrophizing                         -10
+    emotional_reasoning      Emotional Reasoning                      -9
+    mind_reading             Mind Reading                             -8
+    fortune_telling          Fortune Telling                          -8
+    should_statements        Should Statements                        -7
+    magnification_minimization  Magnification/Minimization            -8
+    labeling                 Labeling                                 -8
+    personalization          Personalization                          -7
+
+
+  5.4  PHILOSOPHICAL RAZORS  (6 items)
+  ····································
+  Principles used to evaluate testability and epistemic quality.
+  Passing a razor earns a positive reward.
+
+    Key                        Name                                  Reward
+    ───────────────────────    ────────────────────────────────────   ──────
+    occams_razor               Occam's Razor                         +10
+    hanlons_razor              Hanlon's Razor                         +2
+    hitchens_razor             Hitchens's Razor                       +9
+    sagan_standard             Sagan Standard                         +8
+    newtons_flaming_laser_sword  Newton's Flaming Laser Sword         +7
+    poppers_falsifiability     Popper's Falsifiability                +8
+
+
+6. CONFIDENCE THRESHOLDS
+────────────────────────────────────────────────────────────────────────────────
+
+  Not every detection from the LLM is accepted. Two thresholds filter results:
+
+    ISSUE_CONFIDENCE  (default 0.20)
+      Minimum confidence for a fallacy, bias, or distortion to be kept.
+      Detections below this are discarded.
+
+    RAZOR_CONFIDENCE  (default 0.30)
+      Minimum confidence for a razor to be marked as "passed."
+      If the LLM says a razor passes but with confidence below this
+      threshold, it is overridden to "fail."
+
+
+7. SCORING LOGIC
+────────────────────────────────────────────────────────────────────────────────
+
+  The final score is computed deterministically in Python from normalized
+  detections + metadata + optional short-deduction hint.
+
+  7.1  HIGH-LEVEL FORMULA (CURRENT LINEAR MODEL)
+
+       final_score =
+         BASE_SCORE
+         - bias_penalty
+         - low_logic_penalty
+         - low_testability_penalty
+         - short_vacuity_penalty
+         - logic_absence_penalty
+         + razor_reward_scaled
+         + testability_reward
+         + logic_boost
+         + meta_hint_bonus
+         + science_logic_bonus
+         + deduction_bonus
+         + fiction bonuses
+       then guardrails/caps are applied.
+
+  7.2  ISSUE PRESSURE / BIAS DIMENSION
+
+       raw_bias_pressure =
+         issue_penalty_total + (issue_count * BIAS_COUNT_BOOST)
+
+       bias_level_score =
+         100 * (1 - exp(-raw_bias_pressure / BIAS_PRESSURE_SCALE))
+
+       This soft-compression avoids a hard binary 0/100 jump while still
+       penalizing dense fallacy/bias/distortion clusters.
+
+  7.3  LOGIC VARIABLES (RAW)
+
+       Raw logic integrates:
+         - assumption count + boundary clarity
+         - if/then structure + completeness
+         - contradiction index (inverse)
+         - overclaim penalty (inverse)
+         - uncertainty calibration
+         - inference chain stability
+         - connector score (because/therefore/implies/etc.)
+         - science reasoning proxy (evidence quality/falsifiability/verifiability)
+
+       Raw logic is retained as a diagnostic signal in score_breakdown.
+
+  7.4  DEDUCTION LANE (SHORT INPUTS)
+
+       For short inputs (<= 80 words), a conditional LLM hint can activate
+       a short-deduction lane:
+         - is_short_deduction (bool)
+         - deduction_strength (none/weak/moderate/strong)
+
+       This lane can:
+         - remove logic-absence penalty for valid concise deductions
+         - add bounded deduction_bonus to final score
+         - increase effective logic shown in UI
+
+  7.5  SCIENCE / EVIDENCE ENHANCEMENTS
+
+       Evidence citation and sufficiency are intentionally weighted more
+       strongly in evidence_dependency_score than before.
+
+       science_logic_bonus (non-fiction only) can add bounded uplift when:
+         - science_reasoning_proxy is strong
+         - contradiction pressure is low
+
+  7.6  FICTION LANE
+
+       Fiction mode has a separate internal-coherence lane:
+         - lower dependence on external testability
+         - bounded fiction bonuses when coherence and low contradiction hold
+
+  7.7  GUARDRAILS / CAPS
+
+       - If contradiction/overclaim logic guardrails trigger:
+           final_score is capped at 50.
+       - Non-catastrophic soft cap:
+           final_score constrained to [3, 97].
+       - Hard clamp:
+           final_score constrained to [0, 100].
+
+  7.8  CORE DEFAULTS (CURRENT)
+
+       BASE_SCORE                 = 75
+       FALLACY_WEIGHT             = 1.05
+       DISTORTION_WEIGHT          = 0.68
+       BIAS_WEIGHT                = 0.35
+       MAX_RAZOR_BONUS            = 25
+
+       BIAS_COUNT_BOOST           = 2.2
+       BIAS_PRESSURE_SCALE        = 60
+       BIAS_PENALTY_GAIN          = 0.38
+       LOW_LOGIC_PENALTY_GAIN     = 0.48
+       LOW_TESTABILITY_PENALTY_GAIN = 0.28
+       LOGIC_REWARD_GAIN          = 0.34
+       TESTABILITY_REWARD_GAIN    = 0.08
+       MAX_META_HINT_BONUS        = 13.2
+
+       Note:
+         The prompt asks the model to report issues >= 0.6 confidence, but
+         runtime filtering still uses ISSUE_CONFIDENCE (default 0.20).
+
+
+8. QUALITATIVE STATUS LABELS (LOGIC-FIRST)
+────────────────────────────────────────────────────────────────────────────────
+
+  Status is now three-axis:
+    - Bias phrase:    Biased / Some bias / Low bias
+    - Testability:    not / partly / testable and explainable
+    - Logic phrase:   illogical/logic absent / partly well thought out / well thought out
+
+  Important:
+    - UI logic phrase uses effective logic (UI-aligned logic value).
+    - Raw logic integrity is still exposed in diagnostics.
+    - Interpretation note is added when overall quality is high but explicit
+      logical explanation in text is limited.
+
+
+9. DISPLAY LIMITS
+────────────────────────────────────────────────────────────────────────────────
+
+  Scoring uses ALL detected issues, but the frontend shows only the top N
+  on the main result cards:
+
+    Logical Fallacies   : top 3 (by penalty magnitude)
+    Cognitive Biases    : top 3
+    Cognitive Distortions : top 2
+
+  An expandable "View all detected issues" section shows the full list.
+
+
+10. DASHBOARD SCORES
+────────────────────────────────────────────────────────────────────────────────
+
+  The UI presents four circular score indicators:
+
+    1. Overall Strength   = final_score (0–100)
+       Weighted sum of three dimensions:
+         - bias_score
+         - testability_score
+         - logic_score
+
+    2. Bias Score         = inverse issue-penalty quality (0–100)
+       Higher = lower pressure from fallacies, biases, and distortions.
+
+    3. Testability        = razor_alignment (0–100%)
+       Percentage of philosophical razors passed.
+
+    4. Logic Integrity    = effective UI logic score (0–100)
+       UI-aligned logic reading that incorporates raw logic + bounded
+       deduction/science/meta-hint uplift.
+
+  Additional diagnostic fields in score_breakdown:
+    - mode_detected
+    - logic_integrity_score (raw)
+    - logic_integrity_score_ui
+    - evidence_dependency_score
+    - dimension_scores (bias/testability/logic_ui + logic_raw + zones)
+    - logic_variables (assumptions, boundaries, if/then completeness, etc.)
+
+
+11. BIAS SPECIFICITY & DETECTION GUARDS
+────────────────────────────────────────────────────────────────────────────────
+
+  To prevent generic biases from crowding out more specific diagnoses,
+  several rules are enforced at both prompt and post-processing levels.
+
+  11.1  BIAS SPECIFICITY RULE (Call 2 prompt)
+
+       The LLM is instructed to always prefer a specific child bias over a
+       generic parent. For example, flag "survivorship_bias" rather than
+       "confirmation_bias" when the argument generalizes from visible
+       successes. Only use the parent when no child applies.
+
+  11.2  BIAS HIERARCHY & DEDUPLICATION (Python post-processing)
+
+       confirmation_bias is the parent of:
+         - survivorship_bias
+         - self_serving_bias
+         - belief_bias
+
+       When any child is detected:
+         1. If the parent was also detected, its penalty is zeroed.
+         2. If the parent was NOT detected, it is injected as a zero-penalty
+            umbrella label (display-only) to provide taxonomic context.
+
+       availability_heuristic is kept independent (not nested) — it is a
+       memory-centric bias that co-occurs with confirmation bias.
+
+  11.3  DETECTION GUARDS (Call 2 prompt)
+
+       SURVIVORSHIP BIAS GUARD:
+         Only flag when the argument explicitly draws conclusions from a few
+         visible/successful cases while ignoring known failures. Gated by
+         the exemplar_type metadata: requires "famous_case" or "anecdote"
+         AND generalizing, with population data not outweighing
+         cherry-picked cases. Prevents unfalsifiable accusations.
+
+       SYMMETRY IMPULSE:
+         Flag when the argument forces artificial balance or symmetry —
+         e.g. assuming every pro must have a con, or that both sides
+         deserve equal weight despite evidence strongly favouring one side.
+         Do NOT flag when the argument presents genuinely balanced evidence.
+
+       PROPORTIONALITY BIAS (MEMC):
+         Flag when the argument assumes cause-effect proportionality —
+         large events must have large causes. Classic indicator: dismissing
+         simple or accidental causes because the outcome is dramatic, or
+         inflating a cause to match a dramatic consequence.
+
+
+12. NOVEL BIAS DEFINITIONS (Cognition Today)
+────────────────────────────────────────────────────────────────────────────────
+
+  Two biases unique to this system, sourced from Cognition Today research:
+
+  12.1  SYMMETRY IMPULSE
+        Source: https://cognitiontoday.com/symmetry-impulse-why-how-we-seek-symmetry/
+
+        People use symmetry to complete judgments — assuming every positive
+        must have an equal negative, every pro must have a con, or both
+        sides of an issue deserve equal weight regardless of evidence
+        asymmetry. Driven by perceptual fluency and compression: symmetry
+        is the brain's fastest way to impose structure on uncertainty.
+
+        Metadata trigger: forces_balance = true
+        Detection: claims present artificially balanced framing despite
+        evidence clearly favouring one side.
+
+  12.2  PROPORTIONALITY BIAS (Major Event / Major Cause)
+        Source: https://cognitiontoday.com/why-we-justify-big-events-with-big-causes-proportionality-bias/
+
+        People assume the magnitude of a cause must match the magnitude of
+        its effect. Large events must have large causes; small causes cannot
+        produce large outcomes. This drives conspiracy thinking and
+        dismissal of simple explanations for significant events.
+
+        Metadata trigger: proportional_causation = true
+        Detection: claims dismiss small/accidental causes because the
+        outcome is dramatic, or inflate a cause to match a consequence.
+
+
+================================================================================
+  END OF DOCUMENT
+================================================================================

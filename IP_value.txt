@@ -1,0 +1,367 @@
+================================================================================
+  ARGUMENT ANALYSER — INTELLECTUAL PROPERTY & DEFENSIBLE VALUE
+  Last updated: 2026-02-20
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. ARGUMENT PERSONA SIGNATURES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Concept:
+  Arguments carry structural signatures that characterize the author type.
+  These signatures emerge from the per-claim metadata profile — not from
+  WHAT is argued, but from HOW reasoning is structured, where evidence
+  appears, where it's absent, and how quality varies across claims.
+
+Proposed persona categories:
+  - AI-generated
+  - Novice / untrained
+  - Domain expert
+  - Intelligent non-expert (cross-domain reasoner)
+  - Rhetorically skilled (persuasive but potentially manipulative)
+
+Key signature dimensions (derived from existing 23-field metadata):
+
+  DIMENSION                         AI      NOVICE   EXPERT   INT. NON-EXPERT
+  ─────────────────────────────────────────────────────────────────────────────
+  Avg causal chain length           High    Low      High     Moderate
+  Variance in causal chain          Low     Low      High     Moderate
+  Emotional tone distribution       Flat    Skewed   Neutral  Mixed
+  Absolute language %               Low     High     Low      Low-moderate
+  Evidence type mix                 Uniform None/Anec Scientific Analogical
+  Exemplar type                     Generic Anecdote Pop. data Cross-domain
+  Avg inferential gap               Small   Large    Small    Medium
+  Variance in inferential gap       Low     Low      High     Moderate
+  Avg speculation level             Low     High     Low      Moderate
+  Assumes intent %                  Low     High     Low      Moderate
+  Generalizes %                     Low     High     Low      Moderate
+  Face validity consistency         Uniform Uniform  Bimodal  Gradient
+  Specificity                       High    Low      High     Medium-high
+  Verifiability                     High    Low      High     Mixed
+
+  KEY INSIGHT: VARIANCE IS THE DISCRIMINATOR.
+  - AI arguments are too uniform — every claim is roughly the same quality.
+    Real humans have peaks and valleys.
+  - Novice arguments are also uniform — but uniformly weak.
+  - Expert arguments are bimodal — claims in their domain are exceptional,
+    claims outside it may be casual assertions.
+  - Intelligent non-experts show a gradient — quality degrades as they move
+    further from their core knowledge.
+
+  This variance pattern is the strongest differentiator between AI and
+  human-authored arguments. No existing AI detection tool uses this
+  approach.
+
+Implementation path:
+  Phase 1 (now):      Persist per-claim metadata in database. Feature vector
+                      is computed at analysis time. No profiling yet — just
+                      accumulate data.
+  Phase 2 (month 2):  Unsupervised clustering (k-means / DBSCAN) on feature
+                      vectors to discover natural argument groupings. See
+                      what emerges WITHOUT predefining categories.
+  Phase 3 (month 3+): Collect optional labels from users ("I wrote this" /
+                      "AI wrote this" / "I'm a student" / "I'm a professional").
+                      Map labels onto discovered clusters. Some clusters may
+                      align with expected categories; others may reveal
+                      groupings we didn't anticipate.
+  Phase 4:            Surface persona label on the analysis report, derived
+                      from the cluster the argument falls into. The label
+                      describes the cluster's characteristics, not a
+                      predetermined archetype.
+
+  CRITICAL: Personas are derived from data, not hard-coded. The table of
+  expected dimensions above (AI=uniform, expert=bimodal, etc.) is a
+  hypothesis to be tested against the clusters, not a template to match.
+
+Defensibility:
+  - The persona concept + variance-based profiling is novel and publishable.
+  - The discovered clusters are empirical findings, not assumptions —
+    harder to replicate than copying a predefined taxonomy.
+  - The labeled dataset grows with every user, compounding the moat.
+  - No competitor has the metadata pipeline to compute these features.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. NOVEL BIAS / HEURISTIC CONCEPTUALIZATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+These are original theoretical contributions from the domain expert (Aditya)
+that can be published, detected by the tool, and used in persona profiling.
+
+2a. SYMMETRY IMPULSE (published by Aditya)
+    Status: IMPLEMENTED. Published on Cognition Today:
+      https://cognitiontoday.com/symmetry-impulse-why-how-we-seek-symmetry/
+    Added to definitions.json as "symmetry_impulse" (penalty -8).
+
+    Concept: People use symmetry to complete judgments — assuming every
+    positive must have an equal negative, every pro must have a con, or
+    both sides of an issue deserve equal weight regardless of evidence
+    asymmetry. Driven by perceptual fluency and compression: symmetry is
+    the brain's fastest way to impose structure on uncertainty.
+
+    Types include valence symmetry (pro-con balancing), cause-effect
+    symmetry (proportional causes), extrapolation symmetry, directional
+    symmetry, and social symmetry.
+
+    Detection signal (metadata):
+    - forces_balance = true (new Call 1 tag): claim imposes artificial
+      symmetry despite evidence asymmetry.
+    - Metadata flag fires when any claim has forces_balance = true,
+      nudging Call 2 toward Symmetry Impulse detection.
+
+    Persona relevance:
+    - AI-generated text is heavily trained toward symmetry ("there are
+      arguments on both sides..."). Detecting forced symmetry is a strong
+      AI signature signal.
+    - Experts rarely use false balance — they state what the evidence
+      shows and don't artificially balance it.
+    - Rhetorically skilled arguers may use false balance strategically.
+
+    IP value: HIGH. This is a named heuristic with published priority.
+    This tool is the ONLY system that can flag this pattern.
+
+2a-ii. PROPORTIONALITY BIAS / MEMC (published by Aditya)
+    Status: IMPLEMENTED. Published on Cognition Today:
+      https://cognitiontoday.com/why-we-justify-big-events-with-big-causes-proportionality-bias/
+    Added to definitions.json as "proportionality_bias" (penalty -8).
+
+    Concept: People assume the magnitude of a cause must match the
+    magnitude of its effect (Major Event / Major Cause heuristic). Large
+    events must have large causes; small causes cannot produce large
+    outcomes. Drives conspiracy thinking and dismissal of simple
+    explanations for significant events.
+
+    Detection signal (metadata):
+    - proportional_causation = true (new Call 1 tag): claim assumes
+      cause-effect proportionality without evidence.
+    - Metadata flag fires when any claim has this tag, nudging Call 2
+      toward Proportionality Bias detection.
+
+    Persona relevance:
+    - Common in conspiracy-minded arguments and emotionally charged
+      reasoning about large-scale events.
+    - Experts and scientists are trained to evaluate mechanisms rather
+      than match magnitudes (the butterfly effect principle).
+
+    IP value: HIGH. Published priority + novel detection mechanism.
+
+2b. EXTENSIBLE TAXONOMY: FROM ERROR DETECTION TO THINKING PATTERN PROFILING
+
+    Core insight: the metadata extraction layer (Call 1) is content-agnostic.
+    It tags structural features of claims. It doesn't care whether those
+    features are used to detect errors or to profile thinking strategies.
+
+    The system can be extended from "find what's wrong" to "characterize
+    how this person thinks" by adding new metadata tags to Call 1:
+
+    Proposed thinking-pattern tags (beyond current error-focused tags):
+      - uses_analogy            : bool (reasons by analogy?)
+      - analogical_domain       : string (source domain of the analogy)
+      - hedges_appropriately    : bool (qualifies certainty?)
+      - acknowledges_counter    : bool (mentions opposing evidence?)
+      - distinguishes_corr_cause: bool (separates correlation from causation?)
+      - quantifies_claim        : bool (uses numbers, magnitudes?)
+      - cites_mechanism         : bool (explains WHY, not just THAT?)
+      - uses_conditional        : bool ("if X then Y" reasoning?)
+      - meta_cognitive          : bool (reflects on own reasoning?)
+      - perspective_taking      : bool (considers other viewpoints?)
+      - temporal_qualification  : bool (acknowledges time-dependency?)
+      - symmetry_framing        : bool (presents both sides equally?)
+      - symmetry_evidence_match : bool (is the balance evidence-backed?)
+
+    These capture positive cognitive strategies, not just errors.
+    Combined with existing error-detection tags, they create a complete
+    cognitive profile of the argument author.
+
+    Architectural requirement: ONLY Call 1's prompt changes. The pipeline,
+    scoring engine, database schema, and frontend all consume whatever
+    metadata Call 1 produces. This is the value of the two-stage design.
+
+    New taxonomy file: thinking_patterns.json (or extend definitions.json)
+    mapping each pattern to descriptors only, e.g.:
+      "analogical_reasoning": {
+        "name": "Analogical Reasoning",
+        "description": "Drawing parallels between a known domain and the
+                        claim's domain to support the argument",
+        "signal": "diagnostic"
+      }
+
+    IMPORTANT: Persona weights are NOT hard-coded. Personas are discovered
+    from the data, not predefined. The correct pipeline is:
+
+      1. Collect metadata feature vectors from analyzed arguments.
+      2. Run unsupervised clustering (k-means, DBSCAN) on the vectors.
+      3. Observe what natural groupings emerge.
+      4. Label the clusters post-hoc (may or may not match expected
+         categories like "AI", "novice", "expert").
+      5. As labeled data accumulates (user self-reports, expert tags),
+         transition to supervised classification to validate and refine
+         the discovered clusters.
+
+    Hard-coding persona weights would bake in assumptions and blind the
+    system to emergent categories that the data might reveal (e.g.,
+    "rhetorically trained debater" or "well-read non-arguer" may be
+    distinct clusters that weren't anticipated).
+
+    This transforms the tool from an argument error-checker into a
+    cognitive profiling system — a fundamentally different and more
+    defensible product category.
+
+2c. ADDITIONAL NOVEL CONCEPTUALIZATIONS (TBD)
+    Aditya to provide further new definitions as the taxonomy expands.
+    Each new named heuristic/bias follows the same IP path:
+      Define → Publish → Detect → Collect data → Defensible moat.
+
+    Aditya's self-designed claims have been published for several years
+    on Cognition Today. While in the public domain, they have never been
+    operationalized in a detection system. Adding them to the taxonomy
+    creates a direct link between published theory and working software —
+    a combination no competitor can replicate without the same theoretical
+    foundation.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. EXPERT-VALIDATED CONFIDENCE CALIBRATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Concept:
+  Current system uses flat confidence thresholds (0.20 for issues, 0.30
+  for razors). With expert validation data (correct/loose/wrong per
+  detection), build per-bias calibration curves.
+
+  Example: "Hasty Generalization at LLM confidence 0.7 is expert-confirmed
+  85% of the time. Empathy Gap at 0.7 is only confirmed 40% of the time."
+
+  This means the system learns which of its own detections to trust in
+  which contexts.
+
+Why it's defensible:
+  - Requires a real expert in the loop — not just user thumbs-up/down.
+  - Calibration curves are trained on a proprietary validation dataset.
+  - A competitor starting fresh has flat thresholds. We have context-aware
+    confidence adjustment.
+  - Gets better with every expert review.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. ARGUMENT SIMILARITY INDEX (DATA NETWORK EFFECT)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Concept:
+  Compute a sentence embedding for each analyzed argument. Store the
+  vector alongside the analysis. When a new argument arrives, find the
+  K most similar previous arguments and surface patterns:
+
+  "Your argument is structurally similar to 47 others we've analyzed.
+   Arguments like this typically score 35-50 and are most commonly
+   penalized for Hasty Generalization and Self-Serving Bias."
+
+Why it's defensible:
+  - Pure network effect: every user makes it better for the next user.
+  - Embeddings are computed locally (sentence-transformers), no API cost.
+  - The analyzed-argument corpus with linked metadata is a unique asset.
+  - Enables "argument type" discovery: clusters of similar arguments
+    that share common structural patterns and bias profiles.
+
+  Combined with persona signatures, this becomes:
+  "Arguments like yours, written by intelligent non-experts in the
+   politics domain, typically score 30-45 and benefit most from
+   adding statistical evidence and reducing assumed intent."
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. CLAIM-METADATA KNOWLEDGE GRAPH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Concept:
+  Persist every per-claim metadata object in the database. Over time this
+  creates a unique dataset:
+
+    claim_text + 23 metadata tags + triggered flags + detected biases
+    + expert validation (correct/loose/wrong)
+
+  This dataset does not exist anywhere else. Uses:
+  - Train a classifier to replace LLM Call 1 (cost reduction).
+  - Train a direct claim → bias predictor for common patterns.
+  - License to researchers studying argumentation.
+  - Publish benchmarks for academic credibility.
+  - Feed persona signature training.
+
+Why it's defensible:
+  - Unique dataset generated by product usage.
+  - Expert validation layer makes it higher quality than anything
+    a competitor could generate from LLM outputs alone.
+  - Compounds with every analysis.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. IMPROVEMENT TRACKING (LONGITUDINAL DATA)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Concept:
+  Track when users revise and resubmit arguments. The delta between
+  versions reveals what improvement strategies work:
+
+  "Version 1: score 35, 6 issues. Version 2: score 62, 3 issues.
+   User eliminated Hasty Generalization by adding statistical evidence."
+
+  Over time, this builds a dataset of effective argument improvement
+  patterns, making the improvement suggestions data-driven rather than
+  LLM-generated.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. IP DEFENSIBILITY SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ASSET                          TYPE              DEFENSIBILITY    TIMELINE
+────────────────────────────────────────────────────────────────────────────
+Persona signatures             Novel concept     Very high        Month 2-4
+  (variance-based profiling)
+
+Symmetry Impulse detection     Novel theory      Very high        IMPLEMENTED
+  (published, metadata-gated)
+
+Proportionality Bias detection Novel theory      Very high        IMPLEMENTED
+  (published, metadata-gated)
+
+Future novel conceptualizations Novel theory     Very high        Ongoing
+
+Expert-validated calibration   Proprietary data  High             Month 2-3
+
+Argument similarity index      Network effect    High             Month 1-2
+
+Claim-metadata knowledge graph Proprietary data  High             Now (persist)
+
+Improvement tracking           Proprietary data  Medium-high      Month 4-6
+
+Metadata extraction pipeline   Architecture      Medium           Already built
+  (three-stage with flags)
+
+Bias hierarchy + deduplication Architecture      Medium           Already built
+
+Calibrated scoring weights     Configuration     Low-medium       Already done
+
+Taxonomy (definitions.json)    Subject expertise Low (copiable)   Already done
+  (21 biases, 17 fallacies,
+   12 distortions, 6 razors)
+
+
+The top 4 defensible assets are:
+  1. Persona signatures — novel concept, requires the metadata pipeline,
+     improves with data, potentially publishable.
+  2. Novel heuristic conceptualizations — Symmetry Impulse and
+     Proportionality Bias are now IMPLEMENTED with published priority.
+     Each new conceptualization follows: Define → Publish → Detect →
+     Collect data → Defensible moat.
+  3. Expert-validated confidence calibration — requires real expert in the
+     loop, compounds over time, cannot be replicated without the same
+     validation corpus.
+  4. Three-stage metadata pipeline — 23-tag extraction → niche bias
+     flags → metadata-enriched LLM analysis. Architectural moat that
+     enables all other IP assets.
+
+None of these can be replicated by a competitor who copies the codebase.
+They require the combination of: domain expertise + metadata pipeline +
+user base + expert validation loop + time.

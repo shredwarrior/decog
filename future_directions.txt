@@ -1,0 +1,330 @@
+================================================================================
+  ARGUMENT ANALYSER — FUTURE DIRECTIONS & IMPLEMENTATION PLAN
+  Last updated: 2026-02-23
+================================================================================
+
+This document captures planned features, architectural decisions, and the
+strategic roadmap so that any new Cursor session can pick up where we left off.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. CURRENT SYSTEM ARCHITECTURE (as of Feb 2026)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Files:
+  analyzer.py        – 3-call LLM pipeline (metadata → analysis → improvements)
+  definitions.json   – Taxonomy of fallacies, biases, distortions, razors
+  app.py             – Flask routes
+  engagement.py      – Email subscription, share pages, SQLite database
+  templates/index.html + static/style.css – Frontend
+  templates/share.html – Public share page with Open Graph meta
+
+Pipeline (per analysis):
+  Call 1 (metadata):  Decomposes argument into individual claims, tags each
+                      with 23 structural/epistemic features including the new
+                      exemplar_type field.
+  Call 2 (analysis):  Main LLM call, enriched with aggregated metadata context
+                      and targeted flags. Returns fallacies, biases,
+                      distortions, razors, executive summary.
+  Call 3 (improvements): Deterministic hints from definitions.json + LLM
+                         synthesis into 5 actionable suggestions.
+
+Key mechanisms:
+  - Bias specificity hierarchy: Confirmation Bias is suppressed in favour of
+    its children (Survivorship, Self-Serving, Belief Bias) when detected.
+    It is then re-injected as a zero-penalty umbrella label programmatically.
+  - Survivorship Bias guard: Only flagged when metadata shows exemplar_type
+    is "famous_case" or "anecdote" AND claims generalize, AND population data
+    does not outweigh cherry-picked cases. Prevents unfalsifiable accusations.
+  - Substance penalty: -40 for <10 words, -15 for 10-30 words, -10 for
+    single-claim arguments.
+  - Niche biases added: Maslow's Hammer, Hypercognition, Russell's Teapot,
+    Symmetry Impulse, Proportionality Bias (MEMC).
+  - Novel metadata tags: forces_balance (bool), proportional_causation (bool)
+    — drive detection of Symmetry Impulse and Proportionality Bias.
+  - Niche bias flags in metadata aggregation for all five new biases.
+
+Scoring parameters (calibrated via grid search, Feb 2026):
+  BASE_SCORE=70, FALLACY_WEIGHT=0.8, BIAS_WEIGHT=0.4, DISTORTION_WEIGHT=0.4,
+  ISSUE_CONFIDENCE=0.20, RAZOR_CONFIDENCE=0.30, MAX_RAZOR_BONUS=25
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. FEATURE: PER-CLAIM METADATA TRANSPARENCY ("SHOW YOUR WORK")
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Status: PLANNED
+Priority: HIGH — differentiates the tool as educational, not just evaluative.
+
+Goal:
+  Show users the per-claim metadata alongside the original argument text,
+  highlighting which words/phrases triggered which flags and ultimately led
+  to which bias/fallacy detections.
+
+Backend changes (analyzer.py):
+  - Currently _metadata_to_context() aggregates per-claim metadata into
+    counts and discards the raw list after building the context block.
+  - Change: preserve the full per-claim metadata list in the analysis result.
+    Return it under a new key "claim_metadata" in the response dict from
+    analyze_argument().
+  - Each claim object already contains "claim_text" (verbatim excerpt from
+    the argument). This serves as the location anchor.
+  - Add a new field to each claim: "triggered_flags" — a list of strings
+    indicating which metadata flags this claim contributed to (e.g.,
+    "Empathy Gap nudge", "Survivorship Bias nudge"). This mapping already
+    exists in _metadata_to_context() as if-statements; refactor those into
+    per-claim attribution instead of (or in addition to) aggregate flags.
+
+Frontend changes (index.html):
+  - New section: "Argument Breakdown" (collapsible, below improvements).
+  - Render each claim as a highlighted quote from the argument.
+  - Below each quote, show the relevant metadata tags as small pills/badges:
+      [anecdote] [high speculation] [assumes intent] [large inferential gap]
+  - Colour-code: red for flags that triggered bias/fallacy detection, grey
+    for neutral tags, green for strong evidence/low speculation.
+  - On hover or click, show which bias/fallacy detection was influenced by
+    this claim's metadata.
+
+Paywall:
+  - Free users see the claim list with basic tag pills.
+  - Paid users get the full annotated view with triggered-flag mapping and
+    literature-backed explanations (see Feature 3).
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. FEATURE: LITERATURE-ENRICHED IMPROVEMENTS (PAID TIER)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Status: PLANNED
+Priority: MEDIUM — requires Aditya's published literature as input.
+
+Goal:
+  Replace generic 2-tip improvements (currently in definitions.json) with
+  deeper, literature-grounded explanations from Cognition Today articles.
+  This is the premium value layer.
+
+Implementation:
+  - Create literature.json (or a literature/ folder with per-topic files).
+    Each entry keyed by bias/fallacy/distortion/razor key, containing:
+      - "explanation": 2-3 paragraphs from published Cognition Today content.
+      - "examples": Real-world examples illustrating the bias in action.
+      - "fix_strategies": Detailed, actionable fixes with reasoning.
+  - Modify Call 3 (_generate_improvements) to inject literature context for
+    paid users. Free users get the current generic hints. Paid users get
+    the full literature block, producing richer, more specific suggestions.
+  - Frontend: render paid improvements in a distinct styled section with
+    "Powered by Cognition Today research" branding.
+
+Content pipeline:
+  Aditya provides existing articles/text → structure into literature.json
+  entries → test with a few arguments to verify quality lift.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. FEATURE: ARGUMENT VALIDATION BADGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Status: PLANNED (post-traction)
+Priority: LOW — engagement feature, implement after user base exists.
+
+Goal:
+  Registered users can earn a shareable badge certifying their argument
+  passed formal analysis thresholds.
+
+Proposed thresholds for badge:
+  - Overall score ≥ 75
+  - Fewer than 2 logical fallacies detected
+  - At least 4/6 philosophical razors passed
+  - No critical distortions (e.g., no All-or-Nothing, no Emotional Reasoning)
+
+Implementation:
+  - Badge is a generated image (or SVG) with the score, date, and a unique
+    verification hash linking back to the stored analysis.
+  - Share page (share.html) already exists; extend it with badge rendering.
+  - Store badge-eligible analyses in a "badges" table in the database with
+    the verification hash for public lookup.
+  - Anti-gaming: badge is tied to the specific argument text. Editing and
+    re-submitting generates a new analysis, not an update to the badge.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. FEATURE: USER FEEDBACK SIGNAL (THUMBS UP/DOWN)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Status: PLANNED
+Priority: HIGH — essential for future ML training data.
+
+Goal:
+  Let users rate each analysis result. This becomes the label for future
+  classifier training.
+
+Implementation:
+  - Add thumbs-up / thumbs-down buttons on the results page.
+  - Store feedback in a "feedback" table: analysis_id, rating (1/-1),
+    timestamp, optional text comment.
+  - No immediate use beyond collection; data accumulates for Feature 7.
+  - Minimal UI: two small icons below the score circle, with a "Thanks for
+    your feedback" toast on click.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. DEPLOYMENT: RAILWAY WITH POSTGRESQL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Status: PLANNED
+Priority: HIGH — required before public launch.
+
+Current state:
+  - App uses SQLite via engagement.py (argument_analyser.db).
+  - SQLite is fine for local dev but will corrupt under concurrent writes
+    and is lost on Railway's ephemeral filesystem.
+
+Migration plan:
+  1. Add psycopg2-binary to requirements.txt.
+  2. Use DATABASE_URL env var (Railway provides this automatically when
+     you provision a PostgreSQL add-on).
+  3. Modify engagement.py to use psycopg2 when DATABASE_URL is set,
+     falling back to SQLite for local development.
+  4. Schema is simple (analyses table, subscribers table) — direct SQL
+     migration, no ORM needed.
+  5. Railway PostgreSQL add-on: $7/month for persistent storage.
+
+Estimated total monthly cost at 100 users/day:
+  - OpenAI API: ~$12/month
+  - Railway compute (Starter): ~$5/month
+  - Railway PostgreSQL: ~$7/month
+  - Total: ~$24/month
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. LONG-TERM: CUSTOM ML MODEL FOR METADATA EXTRACTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Status: FUTURE (3-6 months after launch)
+Priority: LOW — only worthwhile after sufficient data collection.
+
+Goal:
+  Replace Call 1 (metadata extraction) with a fine-tuned transformer model,
+  reducing API costs by ~30% and eliminating LLM latency for that stage.
+
+Prerequisites:
+  - 2,000-3,000+ analyzed arguments stored in the database.
+  - User feedback signal (Feature 5) to validate quality.
+  - Per-claim metadata preserved (Feature 2) as the training target.
+
+Approach:
+  - Model: distilbert-base or similar small transformer.
+  - Input: claim text (string).
+  - Output: the 23 metadata tags (multi-label classification + regression
+    for scales like speculation_level, evidence_sufficiency).
+  - Training data: the raw per-claim metadata from Call 1, stored for every
+    analysis. The LLM's own outputs become the training labels.
+  - Validation: compare model predictions against LLM predictions on a
+    held-out set; also use user feedback to identify systematic LLM errors.
+  - Deployment: host the model on Railway (or a GPU provider if needed)
+    as a separate microservice. analyzer.py calls it instead of the LLM
+    for Call 1.
+
+What stays with the LLM:
+  - Call 2 (main analysis) — requires contextual judgment that a classifier
+    can't replicate. This is where the LLM's value is irreplaceable.
+  - Call 3 (improvements) — needs creative synthesis, stays with LLM.
+
+Expected impact:
+  - ~30% reduction in API cost per analysis.
+  - ~5-8 second faster response time (Call 1 currently takes ~5-8s).
+  - No quality loss if the model is trained on sufficient data.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. DESIGN DECISIONS LOG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This section records key design decisions and their reasoning so future
+sessions don't re-debate them.
+
+[2026-02-20] Bias hierarchy — only Confirmation Bias has children
+  Children: Survivorship Bias, Self-Serving Bias, Belief Bias.
+  Availability Heuristic stays independent (memory-centric, not confirmatory).
+  Negativity Bias stays independent (FAE is attribution, not negativity).
+  Rationale: Only nest where the parent-child relationship is theoretically
+  obvious. Forced nesting creates false taxonomies.
+
+[2026-02-20] Confirmation Bias as zero-penalty umbrella
+  When any child is detected, Confirmation Bias is injected programmatically
+  with penalty=0 and is_umbrella=True. Not detected by LLM. Rationale:
+  Confirmation Bias is nearly tautological in flawed reasoning — technically
+  correct but informationally useless. The child carries the specific penalty
+  and the actionable diagnosis.
+
+[2026-02-20] Survivorship Bias gated by exemplar_type metadata
+  The accusation of survivorship bias is itself unfalsifiable if you can
+  always hypothesize an invisible counter-sample. This is Attribute
+  Substitution / Maslow's Hammer applied to the analysis tool itself.
+  Fix: Call 1 now tags each claim's exemplar_type. The survivorship flag
+  only fires when exemplar_type is "famous_case" or "anecdote" AND the
+  argument generalizes AND population data doesn't outweigh cherry-picked
+  cases. This makes the accusation falsifiable.
+
+[2026-02-20] New biases: Maslow's Hammer, Hypercognition, Russell's Teapot
+  Added to definitions.json to capture meta-reasoning errors (forcing a
+  theory onto data, over-classifying, unfalsifiable burden-shifting).
+  These are relevant both to arguments being analyzed AND to the analysis
+  tool itself as a self-check mechanism.
+
+[2026-02-23] New biases: Symmetry Impulse, Proportionality Bias (MEMC)
+  Sourced from published Cognition Today research. Each has a dedicated
+  boolean metadata tag in Call 1 (forces_balance, proportional_causation),
+  a niche bias flag in metadata aggregation, a detection guard in Call 2,
+  and a definitions.json entry with penalty -8 and improvement hints.
+  Symmetry Impulse: flags when claims impose artificial balance despite
+  evidence asymmetry. Proportionality Bias: flags when claims assume
+  cause magnitude must match effect magnitude.
+  Test run on 15-argument suite: 0/15 false positives (correctly absent
+  from all test arguments that don't exhibit these patterns).
+
+[2026-02-23] Footer: Twitter replaced with LinkedIn
+
+[2026-02-20] Substance penalty for short arguments
+  -40 for <10 words, -15 for 10-30 words, -10 for single-claim.
+  Allows powerful short arguments (e.g., Flynn effect citation) to score
+  well (70-80) while vacuous short opinions score near 0.
+
+[2026-02-20] Scoring calibration via grid search
+  30 test arguments across 5 quality tiers. Phase 1: cache LLM detections.
+  Phase 2: brute-force 30,720 parameter combos. Winning params applied.
+  Calibration scripts in calibration/ folder (cache.json gitignored).
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. FILE REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Core application:
+  analyzer.py          – LLM pipeline, scoring, metadata, improvements
+  definitions.json     – Taxonomy with penalties, rewards, improvement hints
+  app.py               – Flask routes and config
+  engagement.py        – Database, subscriptions, share logic
+  templates/index.html – Main frontend
+  templates/share.html – Public share page
+  static/style.css     – Styles (black/white/#4be4ff branding)
+  static/logo.png      – Cognition Today logo
+
+Configuration:
+  .env                 – API keys, model config, scoring params
+  requirements.txt     – Python dependencies
+  Procfile             – Railway/Heroku start command
+
+Documentation:
+  SYSTEM_LOGIC.txt     – Full system logic and taxonomy reference
+  future_directions.txt – This file (roadmap and design decisions)
+
+Calibration (gitignored outputs):
+  calibration/test_arguments.py  – 30-argument test suite (5 tiers)
+  calibration/calibrate.py       – Grid search calibration script
+  calibration/verify.py          – Post-calibration verification
+  calibration/test_hierarchy.py  – 15-argument bias hierarchy test
+  calibration/test_short.py      – Short argument substance penalty test
+  calibration/test_speculative.py – Speculative argument test
+  calibration/cache.json         – Cached LLM detections (gitignored)
+  calibration/results.json       – Sweep results (gitignored)

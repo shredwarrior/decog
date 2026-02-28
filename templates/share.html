@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>de-cognition: argument analyser</title>
+    <meta name="description" content="de-cognition: find errors in opinions">
+    <meta name="author" content="Cognition Today, Individual">
+    <link rel="canonical" href="{{ request.url }}">
+
+    <!-- Open Graph (Facebook, LinkedIn, etc.) -->
+    <meta property="og:title" content="de-cognition: find errors in opinions">
+    <meta property="og:description" content="de-cognition: argument analyser">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="de-cognition: argument analyser">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:image" content="{{ url_for('static', filename='logo.png', _external=True) }}">
+    <meta property="og:image:alt" content="de-cognition logo">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="de-cognition: find errors in opinions">
+    <meta name="twitter:description" content="de-cognition: argument analyser">
+    <meta name="twitter:image" content="{{ url_for('static', filename='logo.png', _external=True) }}">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e8f4f8;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }
+        .card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            max-width: 560px;
+            width: 100%;
+            padding: 32px 28px;
+            text-align: center;
+        }
+        .brand {
+            font-weight: 900;
+            font-size: 0.9em;
+            color: #111;
+            margin-bottom: 16px;
+            letter-spacing: -0.3px;
+        }
+        .brand span { color: #4be4ff; }
+        .score-row {
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: conic-gradient(var(--c) calc(var(--pct) * 3.6deg), #eaeaea 0deg);
+        }
+        .circle-inner {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.6em;
+            color: #222;
+        }
+        .circle-label {
+            font-weight: 700;
+            font-size: 0.85em;
+            color: #555;
+        }
+        .status-label {
+            font-weight: 800;
+            font-size: 1.05em;
+            color: #111;
+            margin-bottom: 6px;
+        }
+        .status-text {
+            font-size: 0.92em;
+            color: #424242;
+            line-height: 1.45;
+            margin-bottom: 20px;
+        }
+        .cta {
+            display: inline-block;
+            padding: 10px 24px;
+            background: #4be4ff;
+            color: #000;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95em;
+            transition: background 0.15s;
+        }
+        .cta:hover { background: #3ad3ee; }
+        .social-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 18px;
+        }
+        .social-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+            color: #333;
+            text-decoration: none;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: background 0.15s;
+        }
+        .social-btn:hover { background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="brand">Cognition <span>Today</span></div>
+
+        <div class="score-row">
+            {% set score = analysis.score|int %}
+            {% set dim = breakdown.get('dimension_scores', {}) %}
+            {% set bias = dim.get('bias_score', 0)|round|int %}
+            {% set test = dim.get('testability_score', analysis.razor_alignment)|round|int %}
+            {% set logic = dim.get('logic_score', breakdown.get('logic_integrity_score', 0))|round|int %}
+            <div class="score-item">
+                <div class="circle" style="--pct:{{ score }};--c:{{ '#4CAF50' if score >= 70 else '#FF9800' if score >= 50 else '#F44336' }}">
+                    <div class="circle-inner">{{ score }}%</div>
+                </div>
+                <div class="circle-label">Overall</div>
+            </div>
+            <div class="score-item">
+                <div class="circle" style="--pct:{{ bias }};--c:{{ '#4CAF50' if bias >= 70 else '#FF9800' if bias >= 30 else '#F44336' }}">
+                    <div class="circle-inner">{{ bias }}%</div>
+                </div>
+                <div class="circle-label">Bias</div>
+            </div>
+            <div class="score-item">
+                <div class="circle" style="--pct:{{ test }};--c:{{ '#4CAF50' if test >= 70 else '#FF9800' if test >= 30 else '#F44336' }}">
+                    <div class="circle-inner">{{ test }}%</div>
+                </div>
+                <div class="circle-label">Testability</div>
+            </div>
+            <div class="score-item">
+                <div class="circle" style="--pct:{{ logic }};--c:{{ '#4CAF50' if logic >= 70 else '#FF9800' if logic >= 30 else '#F44336' }}">
+                    <div class="circle-inner">{{ logic }}%</div>
+                </div>
+                <div class="circle-label">Logic</div>
+            </div>
+        </div>
+
+        {% if analysis.status_label %}
+        <div class="status-label">{{ analysis.status_label }}</div>
+        {% endif %}
+        {% if analysis.status_message %}
+        <div class="status-text">{{ analysis.status_message }}</div>
+        {% endif %}
+
+        <a class="cta" href="/analysis/{{ analysis.id }}">View full analysis &rarr;</a>
+        <div style="margin-top:10px;">
+            <a class="cta" href="/" style="background:#111;color:#fff;">Analyze your own argument &rarr;</a>
+        </div>
+
+        <div class="social-row">
+            <a class="social-btn" href="https://twitter.com/intent/tweet?text={{ ('de-cognition: find errors in opinions')|urlencode }}&url={{ request.url|urlencode }}" target="_blank" rel="noopener">Share on X</a>
+            <a class="social-btn" href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url|urlencode }}" target="_blank" rel="noopener">LinkedIn</a>
+            <a class="social-btn" href="https://www.facebook.com/sharer/sharer.php?u={{ request.url|urlencode }}" target="_blank" rel="noopener">Facebook</a>
+        </div>
+    </div>
+</body>
+</html>

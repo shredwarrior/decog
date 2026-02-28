@@ -1,0 +1,887 @@
+[
+  {
+    "params": {
+      "BASE_SCORE": 75.0,
+      "FALLACY_WEIGHT": 1.15,
+      "DISTORTION_WEIGHT": 0.75,
+      "BIAS_WEIGHT": 0.35,
+      "BIAS_COUNT_BOOST": 2.2,
+      "BIAS_PRESSURE_SCALE": 60.0,
+      "BIAS_PENALTY_GAIN": 0.38,
+      "LOW_LOGIC_PENALTY_GAIN": 0.48,
+      "LOW_TESTABILITY_PENALTY_GAIN": 0.28,
+      "TESTABILITY_REWARD_GAIN": 0.08,
+      "LOGIC_REWARD_GAIN": 0.34,
+      "MAX_META_HINT_BONUS": 12.0
+    },
+    "objective": 507.46,
+    "saturation_count": 1,
+    "avg_scores": {
+      "weak": 8.14,
+      "medium": 55.57,
+      "high": 61.43
+    },
+    "std_scores": {
+      "weak": 7.02,
+      "medium": 29.57,
+      "high": 25.92
+    },
+    "rows": [
+      {
+        "id": 1,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 2,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 3,
+        "quality": "weak",
+        "group": "weak",
+        "score": 14,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 4,
+        "quality": "weak",
+        "group": "weak",
+        "score": 0,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 5,
+        "quality": "weak",
+        "group": "weak",
+        "score": 15,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 6,
+        "quality": "weak",
+        "group": "weak",
+        "score": 19,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 7,
+        "quality": "medium",
+        "group": "medium",
+        "score": 29,
+        "status": "Low bias, testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 8,
+        "quality": "medium",
+        "group": "medium",
+        "score": 3,
+        "status": "Low bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 9,
+        "quality": "medium",
+        "group": "medium",
+        "score": 64,
+        "status": "Some bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 10,
+        "quality": "medium",
+        "group": "medium",
+        "score": 46,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 11,
+        "quality": "medium",
+        "group": "medium",
+        "score": 72,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 12,
+        "quality": "medium",
+        "group": "medium",
+        "score": 97,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 13,
+        "quality": "scientific",
+        "group": "high",
+        "score": 11,
+        "status": "Low bias, partly testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 14,
+        "quality": "scientific",
+        "group": "high",
+        "score": 32,
+        "status": "Low bias, testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 15,
+        "quality": "scientific",
+        "group": "high",
+        "score": 77,
+        "status": "Low bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 16,
+        "quality": "scientific",
+        "group": "high",
+        "score": 79,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 17,
+        "quality": "scientific",
+        "group": "high",
+        "score": 78,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 18,
+        "quality": "scientific",
+        "group": "high",
+        "score": 79,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 19,
+        "quality": "fiction_low",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 20,
+        "quality": "fiction_medium",
+        "group": "medium",
+        "score": 78,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 21,
+        "quality": "fiction_high",
+        "group": "high",
+        "score": 74,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      }
+    ]
+  },
+  {
+    "params": {
+      "BASE_SCORE": 78.0,
+      "FALLACY_WEIGHT": 1.05,
+      "DISTORTION_WEIGHT": 0.75,
+      "BIAS_WEIGHT": 0.55,
+      "BIAS_COUNT_BOOST": 2.2,
+      "BIAS_PRESSURE_SCALE": 60.0,
+      "BIAS_PENALTY_GAIN": 0.38,
+      "LOW_LOGIC_PENALTY_GAIN": 0.48,
+      "LOW_TESTABILITY_PENALTY_GAIN": 0.2,
+      "TESTABILITY_REWARD_GAIN": 0.16,
+      "LOGIC_REWARD_GAIN": 0.46,
+      "MAX_META_HINT_BONUS": 10.0
+    },
+    "objective": 515.23,
+    "saturation_count": 0,
+    "avg_scores": {
+      "weak": 11.43,
+      "medium": 60.43,
+      "high": 66.29
+    },
+    "std_scores": {
+      "weak": 9.54,
+      "medium": 28.52,
+      "high": 25.98
+    },
+    "rows": [
+      {
+        "id": 1,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 2,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 3,
+        "quality": "weak",
+        "group": "weak",
+        "score": 20,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 4,
+        "quality": "weak",
+        "group": "weak",
+        "score": 4,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 5,
+        "quality": "weak",
+        "group": "weak",
+        "score": 22,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 6,
+        "quality": "weak",
+        "group": "weak",
+        "score": 25,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 7,
+        "quality": "medium",
+        "group": "medium",
+        "score": 35,
+        "status": "Low bias, testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 8,
+        "quality": "medium",
+        "group": "medium",
+        "score": 9,
+        "status": "Low bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 9,
+        "quality": "medium",
+        "group": "medium",
+        "score": 71,
+        "status": "Some bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 10,
+        "quality": "medium",
+        "group": "medium",
+        "score": 50,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 11,
+        "quality": "medium",
+        "group": "medium",
+        "score": 76,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 12,
+        "quality": "medium",
+        "group": "medium",
+        "score": 97,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 13,
+        "quality": "scientific",
+        "group": "high",
+        "score": 15,
+        "status": "Low bias, partly testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 14,
+        "quality": "scientific",
+        "group": "high",
+        "score": 38,
+        "status": "Low bias, testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 15,
+        "quality": "scientific",
+        "group": "high",
+        "score": 80,
+        "status": "Low bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 16,
+        "quality": "scientific",
+        "group": "high",
+        "score": 85,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 17,
+        "quality": "scientific",
+        "group": "high",
+        "score": 83,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 18,
+        "quality": "scientific",
+        "group": "high",
+        "score": 84,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 19,
+        "quality": "fiction_low",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 20,
+        "quality": "fiction_medium",
+        "group": "medium",
+        "score": 85,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 21,
+        "quality": "fiction_high",
+        "group": "high",
+        "score": 79,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      }
+    ]
+  },
+  {
+    "params": {
+      "BASE_SCORE": 75.0,
+      "FALLACY_WEIGHT": 1.15,
+      "DISTORTION_WEIGHT": 0.75,
+      "BIAS_WEIGHT": 0.35,
+      "BIAS_COUNT_BOOST": 2.2,
+      "BIAS_PRESSURE_SCALE": 70.0,
+      "BIAS_PENALTY_GAIN": 0.38,
+      "LOW_LOGIC_PENALTY_GAIN": 0.48,
+      "LOW_TESTABILITY_PENALTY_GAIN": 0.2,
+      "TESTABILITY_REWARD_GAIN": 0.16,
+      "LOGIC_REWARD_GAIN": 0.34,
+      "MAX_META_HINT_BONUS": 8.0
+    },
+    "objective": 516.66,
+    "saturation_count": 0,
+    "avg_scores": {
+      "weak": 10.71,
+      "medium": 58.57,
+      "high": 63.43
+    },
+    "std_scores": {
+      "weak": 9.02,
+      "medium": 28.86,
+      "high": 25.7
+    },
+    "rows": [
+      {
+        "id": 1,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 2,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 3,
+        "quality": "weak",
+        "group": "weak",
+        "score": 19,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 4,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 5,
+        "quality": "weak",
+        "group": "weak",
+        "score": 20,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 6,
+        "quality": "weak",
+        "group": "weak",
+        "score": 24,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 7,
+        "quality": "medium",
+        "group": "medium",
+        "score": 32,
+        "status": "Low bias, testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 8,
+        "quality": "medium",
+        "group": "medium",
+        "score": 7,
+        "status": "Low bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 9,
+        "quality": "medium",
+        "group": "medium",
+        "score": 69,
+        "status": "Some bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 10,
+        "quality": "medium",
+        "group": "medium",
+        "score": 49,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 11,
+        "quality": "medium",
+        "group": "medium",
+        "score": 74,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 12,
+        "quality": "medium",
+        "group": "medium",
+        "score": 97,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 13,
+        "quality": "scientific",
+        "group": "high",
+        "score": 13,
+        "status": "Low bias, partly testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 14,
+        "quality": "scientific",
+        "group": "high",
+        "score": 35,
+        "status": "Low bias, testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 15,
+        "quality": "scientific",
+        "group": "high",
+        "score": 77,
+        "status": "Low bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 16,
+        "quality": "scientific",
+        "group": "high",
+        "score": 82,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 17,
+        "quality": "scientific",
+        "group": "high",
+        "score": 80,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 18,
+        "quality": "scientific",
+        "group": "high",
+        "score": 81,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 19,
+        "quality": "fiction_low",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 20,
+        "quality": "fiction_medium",
+        "group": "medium",
+        "score": 82,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 21,
+        "quality": "fiction_high",
+        "group": "high",
+        "score": 76,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      }
+    ]
+  },
+  {
+    "params": {
+      "BASE_SCORE": 78.0,
+      "FALLACY_WEIGHT": 0.95,
+      "DISTORTION_WEIGHT": 0.75,
+      "BIAS_WEIGHT": 0.55,
+      "BIAS_COUNT_BOOST": 1.8,
+      "BIAS_PRESSURE_SCALE": 70.0,
+      "BIAS_PENALTY_GAIN": 0.38,
+      "LOW_LOGIC_PENALTY_GAIN": 0.48,
+      "LOW_TESTABILITY_PENALTY_GAIN": 0.28,
+      "TESTABILITY_REWARD_GAIN": 0.08,
+      "LOGIC_REWARD_GAIN": 0.46,
+      "MAX_META_HINT_BONUS": 8.0
+    },
+    "objective": 517.14,
+    "saturation_count": 0,
+    "avg_scores": {
+      "weak": 11,
+      "medium": 60.43,
+      "high": 65.43
+    },
+    "std_scores": {
+      "weak": 9.38,
+      "medium": 28.85,
+      "high": 25.77
+    },
+    "rows": [
+      {
+        "id": 1,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 2,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 3,
+        "quality": "weak",
+        "group": "weak",
+        "score": 19,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 4,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 5,
+        "quality": "weak",
+        "group": "weak",
+        "score": 21,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 6,
+        "quality": "weak",
+        "group": "weak",
+        "score": 25,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 7,
+        "quality": "medium",
+        "group": "medium",
+        "score": 32,
+        "status": "Low bias, testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 8,
+        "quality": "medium",
+        "group": "medium",
+        "score": 9,
+        "status": "Low bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 9,
+        "quality": "medium",
+        "group": "medium",
+        "score": 71,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 10,
+        "quality": "medium",
+        "group": "medium",
+        "score": 52,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 11,
+        "quality": "medium",
+        "group": "medium",
+        "score": 79,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 12,
+        "quality": "medium",
+        "group": "medium",
+        "score": 97,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 13,
+        "quality": "scientific",
+        "group": "high",
+        "score": 16,
+        "status": "Low bias, partly testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 14,
+        "quality": "scientific",
+        "group": "high",
+        "score": 35,
+        "status": "Low bias, testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 15,
+        "quality": "scientific",
+        "group": "high",
+        "score": 80,
+        "status": "Low bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 16,
+        "quality": "scientific",
+        "group": "high",
+        "score": 82,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 17,
+        "quality": "scientific",
+        "group": "high",
+        "score": 81,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 18,
+        "quality": "scientific",
+        "group": "high",
+        "score": 82,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 19,
+        "quality": "fiction_low",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 20,
+        "quality": "fiction_medium",
+        "group": "medium",
+        "score": 83,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 21,
+        "quality": "fiction_high",
+        "group": "high",
+        "score": 82,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      }
+    ]
+  },
+  {
+    "params": {
+      "BASE_SCORE": 72.0,
+      "FALLACY_WEIGHT": 1.15,
+      "DISTORTION_WEIGHT": 0.75,
+      "BIAS_WEIGHT": 0.55,
+      "BIAS_COUNT_BOOST": 2.6,
+      "BIAS_PRESSURE_SCALE": 60.0,
+      "BIAS_PENALTY_GAIN": 0.38,
+      "LOW_LOGIC_PENALTY_GAIN": 0.48,
+      "LOW_TESTABILITY_PENALTY_GAIN": 0.28,
+      "TESTABILITY_REWARD_GAIN": 0.12,
+      "LOGIC_REWARD_GAIN": 0.4,
+      "MAX_META_HINT_BONUS": 10.0
+    },
+    "objective": 519.0,
+    "saturation_count": 1,
+    "avg_scores": {
+      "weak": 6.14,
+      "medium": 53.71,
+      "high": 59
+    },
+    "std_scores": {
+      "weak": 4.79,
+      "medium": 29.48,
+      "high": 26.04
+    },
+    "rows": [
+      {
+        "id": 1,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 2,
+        "quality": "weak",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 3,
+        "quality": "weak",
+        "group": "weak",
+        "score": 9,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 4,
+        "quality": "weak",
+        "group": "weak",
+        "score": 0,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 5,
+        "quality": "weak",
+        "group": "weak",
+        "score": 11,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 6,
+        "quality": "weak",
+        "group": "weak",
+        "score": 14,
+        "status": "Biased, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 7,
+        "quality": "medium",
+        "group": "medium",
+        "score": 27,
+        "status": "Low bias, testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 8,
+        "quality": "medium",
+        "group": "medium",
+        "score": 3,
+        "status": "Low bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 9,
+        "quality": "medium",
+        "group": "medium",
+        "score": 63,
+        "status": "Some bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 10,
+        "quality": "medium",
+        "group": "medium",
+        "score": 42,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 11,
+        "quality": "medium",
+        "group": "medium",
+        "score": 68,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 12,
+        "quality": "medium",
+        "group": "medium",
+        "score": 97,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 13,
+        "quality": "scientific",
+        "group": "high",
+        "score": 8,
+        "status": "Low bias, partly testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 14,
+        "quality": "scientific",
+        "group": "high",
+        "score": 30,
+        "status": "Low bias, testable and explainable, illogical/logic absent"
+      },
+      {
+        "id": 15,
+        "quality": "scientific",
+        "group": "high",
+        "score": 74,
+        "status": "Low bias, partly testable and explainable, partly well thought out"
+      },
+      {
+        "id": 16,
+        "quality": "scientific",
+        "group": "high",
+        "score": 77,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 17,
+        "quality": "scientific",
+        "group": "high",
+        "score": 76,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 18,
+        "quality": "scientific",
+        "group": "high",
+        "score": 77,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 19,
+        "quality": "fiction_low",
+        "group": "weak",
+        "score": 3,
+        "status": "Some bias, not testable or explainable, illogical/logic absent"
+      },
+      {
+        "id": 20,
+        "quality": "fiction_medium",
+        "group": "medium",
+        "score": 76,
+        "status": "Low bias, testable and explainable, partly well thought out"
+      },
+      {
+        "id": 21,
+        "quality": "fiction_high",
+        "group": "high",
+        "score": 71,
+        "status": "Some bias, partly testable and explainable, partly well thought out"
+      }
+    ]
+  }
+]

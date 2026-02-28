@@ -1,0 +1,2278 @@
+{
+  "T1_01": {
+    "tier": 1,
+    "target_lo": 5,
+    "target_hi": 15,
+    "label": "Flat earth assertion",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "ad_hominem",
+          "reason": "The argument dismisses those who disagree as 'brainwashed' rather than addressing their points.",
+          "confidence": 0.8
+        },
+        {
+          "key": "begging_the_question",
+          "reason": "The argument assumes the conclusion (that the earth is flat) within its premises without providing evidence.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hasty_generalization",
+          "reason": "The conclusion about the earth's shape is based on personal observation without considering broader evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "appeal_to_ignorance",
+          "reason": "The argument suggests that because the speaker does not understand how people on the bottom wouldn't fall off, the earth must be flat.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument reflects a tendency to favor information that supports the flat earth view while dismissing contradictory evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "belief_perseverance",
+          "reason": "The speaker maintains their belief in a flat earth despite the overwhelming evidence to the contrary.",
+          "confidence": 0.7
+        },
+        {
+          "key": "dunning_kruger",
+          "reason": "The speaker displays a lack of awareness of their own ignorance regarding scientific principles, overestimating their understanding.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The speaker generalizes from their personal observation that the earth looks flat to the conclusion that it is flat.",
+          "confidence": 0.8
+        },
+        {
+          "key": "emotional_reasoning",
+          "reason": "The argument relies on the speaker's feelings about control and deception rather than objective evidence.",
+          "confidence": 0.7
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The flat earth theory introduces unnecessary complexity by positing a conspiracy without evidence, while the round earth theory is simpler and supported by evidence.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument assumes malicious intent from NASA and the government without sufficient evidence, violating the principle of not attributing to malice what can be explained by incompetence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument lacks evidence and relies on conspiracy theories, which do not meet the burden of proof required for extraordinary claims.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The claims made about the earth being flat are extraordinary and lack the necessary evidence to be taken seriously.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not provide any verifiable evidence to support the claim that the earth is flat, failing to meet the criteria for falsifiability.",
+          "confidence": 0.9
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made are unfalsifiable as they rely on conspiracy theories that cannot be tested or disproven.",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "T1_02": {
+    "tier": 1,
+    "target_lo": 5,
+    "target_hi": 15,
+    "label": "Conspiracy anti-vax",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "ad_hominem",
+          "reason": "The argument attacks doctors as 'paid shills' rather than addressing their claims or evidence.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes the claim that vaccines cause illness based on a single anecdote about the cousin.",
+          "confidence": 0.8
+        },
+        {
+          "key": "post_hoc",
+          "reason": "The argument implies that because the cousin got sick after vaccination, the vaccine must have caused the illness.",
+          "confidence": 0.8
+        },
+        {
+          "key": "appeal_to_emotion",
+          "reason": "The argument uses emotionally charged language ('poison', 'sheep') to sway opinion rather than presenting factual evidence.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument selectively presents evidence (anecdote) that supports a pre-existing belief against vaccines.",
+          "confidence": 0.8
+        },
+        {
+          "key": "belief_perseverance",
+          "reason": "The argument maintains a strong stance against vaccines despite the lack of credible evidence.",
+          "confidence": 0.7
+        },
+        {
+          "key": "availability_heuristic",
+          "reason": "The argument relies on a personal anecdote, which may be more memorable than statistical evidence.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes broad claims about vaccines and doctors based on limited evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "mental_filter",
+          "reason": "The argument focuses solely on negative experiences related to vaccines while ignoring positive outcomes.",
+          "confidence": 0.7
+        },
+        {
+          "key": "labeling",
+          "reason": "The argument labels those who trust vaccines as 'sheep', which is a derogatory term that oversimplifies their stance.",
+          "confidence": 0.6
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces unnecessary complexity by attributing motives to pharmaceutical companies and media.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument assumes malicious intent ('paid shills') without sufficient evidence.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument lacks substantial evidence to support its claims, which should be held to a higher standard.",
+          "confidence": 0.8
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument does not provide verifiable evidence and relies on anecdotal claims.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not effectively distinguish between what is scientifically supported and what is not.",
+          "confidence": 0.8
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made in the argument are not structured in a way that allows for falsification.",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "T1_03": {
+    "tier": 1,
+    "target_lo": 5,
+    "target_hi": 15,
+    "label": "Pure emotional rant",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes that 'everyone in power is corrupt and evil' based on unspecified instances, which is an overreach.",
+          "confidence": 0.8
+        },
+        {
+          "key": "ad_hominem",
+          "reason": "The argument dismisses those who disagree as 'naive or part of the problem,' attacking their character rather than addressing their points.",
+          "confidence": 0.7
+        },
+        {
+          "key": "appeal_to_emotion",
+          "reason": "The argument relies heavily on emotional language ('everything is terrible', 'it's all hopeless') to persuade rather than providing logical reasoning.",
+          "confidence": 0.9
+        },
+        {
+          "key": "begging_the_question",
+          "reason": "The argument assumes that nothing will ever change without providing evidence, essentially restating its conclusion as a premise.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "negativity_bias",
+          "reason": "The argument emphasizes negative aspects ('everything is terrible', 'nothing will ever get better') while ignoring any positive possibilities.",
+          "confidence": 0.8
+        },
+        {
+          "key": "belief_perseverance",
+          "reason": "The argument maintains a fixed belief that the system is rigged and hopeless, despite the lack of evidence to support this view.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "all_or_nothing",
+          "reason": "The argument presents a black-and-white view of the situation, claiming that nothing will ever get better without acknowledging any nuances.",
+          "confidence": 0.9
+        },
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes sweeping statements about the nature of people in power and the system without acknowledging exceptions.",
+          "confidence": 0.8
+        },
+        {
+          "key": "mental_filter",
+          "reason": "The argument focuses solely on negative aspects of the situation while ignoring any positive evidence or outcomes.",
+          "confidence": 0.7
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces unnecessary complexity by assuming widespread corruption without evidence, rather than considering simpler explanations.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument assumes malicious intent ('everyone in power is corrupt and evil') rather than considering that they may be acting out of ignorance or error.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument lacks evidence and relies on assertions, failing to meet the standard of requiring evidence for claims.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument does not provide evidence for its claims, violating the principle that extraordinary claims require extraordinary evidence.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not provide a clear, actionable framework for understanding the claims made, making it less useful.",
+          "confidence": 0.8
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made in the argument are unfalsifiable, as they cannot be tested or disproven.",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "T1_04": {
+    "tier": 1,
+    "target_lo": 5,
+    "target_hi": 15,
+    "label": "Circular reasoning conspiracy",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "begging_the_question",
+          "reason": "The argument assumes the conclusion (the moon landing was faked) within its premises, stating that evidence is fabricated without providing independent support.",
+          "confidence": 0.9
+        },
+        {
+          "key": "appeal_to_ignorance",
+          "reason": "The claim that the moon landing was faked is based on the lack of evidence presented, suggesting that absence of evidence is evidence of faking.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes that all evidence presented by others is fabricated without considering individual cases or sources.",
+          "confidence": 0.7
+        },
+        {
+          "key": "ad_hominem",
+          "reason": "The argument dismisses those who present evidence as being part of the cover-up, attacking their credibility instead of addressing their claims.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument reflects a tendency to only accept information that confirms the belief that the moon landing was faked, dismissing contrary evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "belief_perseverance",
+          "reason": "The argument maintains the belief in a conspiracy despite the lack of credible evidence, showing resistance to changing this belief.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "all_or_nothing",
+          "reason": "The argument presents a binary view that either the moon landing was faked or all evidence supporting it is fabricated, without acknowledging any middle ground.",
+          "confidence": 0.8
+        },
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes sweeping claims about all evidence and sources being unreliable based on a few instances or beliefs.",
+          "confidence": 0.7
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces unnecessary complexity by proposing a conspiracy instead of accepting the simpler explanation that the moon landing occurred.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument fails to consider that people may not be acting with malice; it assumes intent to deceive without evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument does not provide sufficient evidence to support its extraordinary claim that the moon landing was faked.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument lacks empirical evidence and relies on conspiracy theories without scientific backing.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not provide a clear method for falsifying its claims, making it unfalsifiable.",
+          "confidence": 0.8
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made in the argument are not structured in a way that allows for empirical testing or falsification.",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "T1_05": {
+    "tier": 1,
+    "target_lo": 5,
+    "target_hi": 15,
+    "label": "Ad hominem attack",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "ad_hominem",
+          "reason": "The argument attacks the character of climate scientists and Al Gore rather than addressing the validity of climate science itself.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes that all climate scientists are frauds based on a negative view of a few individuals.",
+          "confidence": 0.8
+        },
+        {
+          "key": "appeal_to_emotion",
+          "reason": "The argument uses emotionally charged language to provoke disdain for climate scientists and their motives.",
+          "confidence": 0.9
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument reflects a bias towards confirming pre-existing beliefs about climate scientists being fraudulent.",
+          "confidence": 0.8
+        },
+        {
+          "key": "fundamental_attribution",
+          "reason": "The argument attributes the motives of climate scientists to personal failings rather than considering external factors.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes sweeping claims about all climate scientists based on a few negative examples.",
+          "confidence": 0.8
+        },
+        {
+          "key": "labeling",
+          "reason": "The argument labels climate scientists as 'pathetic losers' without justification, reducing complex individuals to a negative stereotype.",
+          "confidence": 0.9
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces unnecessary complexity by attributing fraudulent motives to all climate scientists instead of considering the scientific consensus.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument fails to assume that the actions of climate scientists could be due to ignorance or misunderstanding rather than malice.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument does not provide sufficient evidence to dismiss the claims of climate scientists as false.",
+          "confidence": 0.8
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument does not adhere to the principle of requiring extraordinary evidence for extraordinary claims, as it dismisses climate change without evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not engage with the scientific evidence or theories, thus failing to apply the principle of simplicity in scientific explanation.",
+          "confidence": 0.7
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The argument does not present a falsifiable hypothesis regarding climate change, instead relying on personal attacks and generalizations.",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "T1_06": {
+    "tier": 1,
+    "target_lo": 5,
+    "target_hi": 15,
+    "label": "Slippery slope paranoia",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "slippery_slope",
+          "reason": "The argument suggests that allowing one gun ban will inevitably lead to a series of increasingly severe restrictions, culminating in a totalitarian regime, without providing evidence for this chain of events.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes from unspecified historical examples to claim that all countries that restrict weapons end up in tyranny, without sufficient evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "appeal_to_emotion",
+          "reason": "The argument employs emotionally charged language to evoke fear of tyranny, rather than relying on logical reasoning.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument appears to selectively highlight examples of countries that have restricted weapons and subsequently experienced tyranny, ignoring counterexamples.",
+          "confidence": 0.8
+        },
+        {
+          "key": "availability_heuristic",
+          "reason": "The argument relies on the most readily available examples of totalitarian regimes to support its claim, which may not represent the broader reality.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "all_or_nothing",
+          "reason": "The argument presents the situation as a binary choice between complete freedom and totalitarianism, ignoring the possibility of moderate regulations.",
+          "confidence": 0.9
+        },
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes sweeping claims about the outcomes of all countries that restrict weapons, without acknowledging variations and nuances.",
+          "confidence": 0.8
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument complicates the issue by introducing a chain of extreme consequences without sufficient justification, rather than considering simpler explanations.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument assumes malicious intent behind gun control measures, rather than considering that such measures might be enacted for public safety.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument lacks sufficient evidence to support its claims about the inevitability of tyranny following gun restrictions.",
+          "confidence": 0.8
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument does not provide empirical evidence to substantiate its claims, relying instead on anecdotal reasoning.",
+          "confidence": 0.8
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not demonstrate a clear distinction between the necessity of gun control and the extreme outcomes it predicts.",
+          "confidence": 0.7
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made in the argument are not easily testable or falsifiable, as they rely on broad generalizations and predictions.",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "T2_01": {
+    "tier": 2,
+    "target_lo": 20,
+    "target_hi": 35,
+    "label": "Social media hot take on education",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes the success of a few individuals (Gates and Zuckerberg) to all cases, implying that a degree is unnecessary for everyone.",
+          "confidence": 0.9
+        },
+        {
+          "key": "false_cause",
+          "reason": "The argument implies a causal relationship between dropping out of college and achieving success without sufficient evidence to support this claim.",
+          "confidence": 0.8
+        },
+        {
+          "key": "appeal_to_emotion",
+          "reason": "The argument uses emotionally charged language (e.g., 'complete waste of time and money', 'designed to keep people in debt') to provoke a negative response towards the education system.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "survivorship_bias",
+          "reason": "The argument focuses on successful dropouts while ignoring the many who drop out and do not succeed, leading to a skewed perception of the necessity of a degree.",
+          "confidence": 0.9
+        },
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument selectively highlights examples of successful individuals who dropped out, reinforcing the belief that college is unnecessary without considering contrary evidence.",
+          "confidence": 0.8
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes broad claims about the education system and its effects based on limited examples, suggesting that all educational experiences are negative.",
+          "confidence": 0.9
+        },
+        {
+          "key": "all_or_nothing",
+          "reason": "The argument presents the education system as entirely negative and ineffective, ignoring any potential benefits of higher education.",
+          "confidence": 0.8
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces complex claims about the education system's motives without sufficient evidence, making it less parsimonious.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument assumes malicious intent behind the education system's structure, which may not be warranted.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument lacks sufficient evidence to support its claims, making it less credible.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument does not adhere to the standard of requiring extraordinary evidence for extraordinary claims about the education system.",
+          "confidence": 0.8
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not effectively distinguish between what is necessary and what is not regarding education, leading to unclear conclusions.",
+          "confidence": 0.7
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made in the argument are not easily testable or falsifiable, as they rely on subjective interpretations of success.",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "T2_02": {
+    "tier": 2,
+    "target_lo": 20,
+    "target_hi": 35,
+    "label": "Oversimplified diet claim",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes that eating meat is always bad based on the claim that vegetarians live longer, without considering other factors that may influence longevity.",
+          "confidence": 0.8
+        },
+        {
+          "key": "false_cause",
+          "reason": "The argument implies a direct causal relationship between going vegan and solving climate change and diseases, without providing sufficient evidence for such a claim.",
+          "confidence": 0.7
+        },
+        {
+          "key": "appeal_to_emotion",
+          "reason": "The argument uses emotionally charged language about the meat industry destroying the planet and making everyone sick to persuade the audience.",
+          "confidence": 0.8
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument selectively presents evidence that supports the view that meat consumption is harmful while ignoring evidence that may contradict this perspective.",
+          "confidence": 0.7
+        },
+        {
+          "key": "belief_perseverance",
+          "reason": "The argument maintains the belief that eating meat is bad despite potential counterarguments or evidence.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "all_or_nothing",
+          "reason": "The argument presents the issue in absolute terms, claiming that eating meat is always bad and that going vegan would completely solve major issues.",
+          "confidence": 0.9
+        },
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes broad claims about the negative effects of meat consumption based on limited evidence, suggesting that all meat consumption leads to negative outcomes.",
+          "confidence": 0.8
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces multiple complex claims about health, morality, and environmental impact without sufficient evidence, making it less parsimonious.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument attributes negative consequences to the meat industry without considering that not all individuals or companies within that industry may have harmful intentions.",
+          "confidence": 0.6
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument presents extraordinary claims about the benefits of veganism without adequate evidence, failing to meet the burden of proof.",
+          "confidence": 0.8
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The claims made in the argument lack rigorous scientific backing and are presented as facts without sufficient substantiation.",
+          "confidence": 0.8
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not provide clear, testable predictions or hypotheses that can be easily falsified.",
+          "confidence": 0.7
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made are not easily falsifiable as they rely on broad generalizations and lack specific, testable predictions.",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "T2_03": {
+    "tier": 2,
+    "target_lo": 20,
+    "target_hi": 35,
+    "label": "Technology fear-mongering",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes that social media is destroying society and making everyone depressed based on anecdotal observations without sufficient evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "false_cause",
+          "reason": "The argument implies a causal relationship between social media use and societal decline or depression without providing evidence to support this claim.",
+          "confidence": 0.7
+        },
+        {
+          "key": "appeal_to_emotion",
+          "reason": "The argument uses emotionally charged language to evoke fear and concern about social media's impact, rather than relying on logical reasoning.",
+          "confidence": 0.8
+        },
+        {
+          "key": "appeal_to_tradition",
+          "reason": "The argument suggests that society was better before smartphones, implying that the past is inherently superior without substantiating this claim.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument reflects a tendency to focus on negative aspects of social media while ignoring any positive effects or evidence that contradicts the claims.",
+          "confidence": 0.7
+        },
+        {
+          "key": "negativity_bias",
+          "reason": "The argument emphasizes the negative consequences of social media, suggesting a disproportionate focus on its harms rather than a balanced view.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes broad claims about the negative effects of social media on all individuals, particularly youth, based on limited observations.",
+          "confidence": 0.8
+        },
+        {
+          "key": "emotional_reasoning",
+          "reason": "The argument relies on emotional responses to social media rather than logical analysis, suggesting that because people feel bad about social media, it must be harmful.",
+          "confidence": 0.7
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces unnecessary complexity by attributing societal issues solely to social media without considering other factors.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument assumes malice or harmful intent from social media without acknowledging that it may not be the sole cause of societal issues.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument presents extraordinary claims about social media's impact without sufficient evidence to support them.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument lacks empirical evidence to back its claims about social media's negative effects, failing to meet the standard of requiring extraordinary evidence for extraordinary claims.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not provide a clear, testable hypothesis regarding the effects of social media, which aligns with the razor's principle.",
+          "confidence": 0.6
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made about social media's effects are not falsifiable as they lack specific, testable predictions.",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "T2_04": {
+    "tier": 2,
+    "target_lo": 20,
+    "target_hi": 35,
+    "label": "Historical oversimplification",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "false_cause",
+          "reason": "The argument asserts a causal relationship between immigration and the fall of the Roman Empire without sufficient evidence, implying that immigration directly caused the cultural destruction.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes the fall of the Roman Empire to contemporary Europe based on a limited historical example, assuming that the same outcome will occur.",
+          "confidence": 0.8
+        },
+        {
+          "key": "slippery_slope",
+          "reason": "The argument suggests that allowing immigration will inevitably lead to the collapse of Western civilization, without providing evidence for this chain of events.",
+          "confidence": 0.7
+        },
+        {
+          "key": "appeal_to_tradition",
+          "reason": "The argument implies that because Roman culture was negatively affected by immigration, modern Western civilization should avoid similar changes to preserve its traditions.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument appears to selectively focus on historical examples that support the claim while ignoring counterexamples or complexities.",
+          "confidence": 0.7
+        },
+        {
+          "key": "ingroup_bias",
+          "reason": "The argument reflects a bias towards protecting 'Western civilization,' suggesting a preference for one's own cultural group over others.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes broad claims about immigration leading to cultural destruction based on the specific case of the Roman Empire, ignoring the nuances of different historical contexts.",
+          "confidence": 0.8
+        },
+        {
+          "key": "catastrophizing",
+          "reason": "The argument suggests that failure to close borders will lead to the catastrophic collapse of Western civilization, which is an exaggerated outcome.",
+          "confidence": 0.7
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces unnecessary complexity by attributing the fall of the Roman Empire solely to immigration without considering other factors.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument assumes malicious intent behind immigration's impact on culture, which may not be warranted; it overlooks the possibility of neutral or positive contributions.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument lacks sufficient evidence to support its claims about immigration leading to cultural destruction, failing to meet the burden of proof.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument does not provide empirical evidence to support its claims, relying instead on anecdotal historical examples.",
+          "confidence": 0.8
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not demonstrate a clear distinction between what is and is not possible regarding the effects of immigration on culture.",
+          "confidence": 0.7
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The argument's claims are not easily testable or falsifiable, as they rely on historical interpretation rather than empirical evidence.",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "T2_05": {
+    "tier": 2,
+    "target_lo": 20,
+    "target_hi": 35,
+    "label": "Pop psychology overreach",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes that all introverts have social anxiety and are lazy based on limited evidence.",
+          "confidence": 0.9
+        },
+        {
+          "key": "strawman",
+          "reason": "The argument misrepresents introversion as merely an excuse for laziness, ignoring the complexity of the introvert experience.",
+          "confidence": 0.8
+        },
+        {
+          "key": "false_cause",
+          "reason": "The argument implies that being more outgoing directly leads to happiness and success without sufficient evidence.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument selectively highlights studies that favor extroversion while ignoring evidence that supports the validity of introversion.",
+          "confidence": 0.8
+        },
+        {
+          "key": "fundamental_attribution",
+          "reason": "The argument attributes introversion to personal failings (laziness) rather than considering situational factors.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes sweeping claims about introverts based on a narrow perspective.",
+          "confidence": 0.9
+        },
+        {
+          "key": "labeling",
+          "reason": "The argument labels introverts as lazy without acknowledging the diversity of their experiences.",
+          "confidence": 0.8
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument complicates the understanding of introversion by attributing it to social anxiety and laziness, rather than recognizing it as a valid personality trait.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument assumes negative intent (laziness) behind introversion rather than considering it as a neutral personality trait.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument lacks sufficient evidence to dismiss introversion as a valid identity, relying on anecdotal success of extroverts.",
+          "confidence": 0.8
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument does not meet the burden of proof required to dismiss the concept of introversion as merely an excuse.",
+          "confidence": 0.8
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument fails to provide a clear distinction between introversion and social anxiety, conflating the two without justification.",
+          "confidence": 0.8
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made about introversion are not easily testable or falsifiable, as they rely on subjective interpretations.",
+          "confidence": 0.7
+        }
+      ]
+    }
+  },
+  "T2_06": {
+    "tier": 2,
+    "target_lo": 20,
+    "target_hi": 35,
+    "label": "Economic hot take",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes from the specific case of small businesses failing and job automation to conclude that minimum wage causes unemployment without sufficient evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "false_cause",
+          "reason": "The argument claims that raising the minimum wage directly causes small businesses to fail and jobs to be automated without establishing a clear causal link.",
+          "confidence": 0.7
+        },
+        {
+          "key": "strawman",
+          "reason": "The argument oversimplifies the position of minimum wage advocates by suggesting they ignore the negative consequences of minimum wage increases.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument selectively highlights examples like Switzerland to support the claim while ignoring counterexamples or evidence that may contradict it.",
+          "confidence": 0.7
+        },
+        {
+          "key": "availability_heuristic",
+          "reason": "The argument relies on readily available examples of small businesses failing and job automation to support its claims, potentially overlooking broader data.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes sweeping claims about minimum wage leading to unemployment based on limited evidence, implying that all instances of minimum wage increases will have the same effect.",
+          "confidence": 0.8
+        },
+        {
+          "key": "all_or_nothing",
+          "reason": "The argument presents the issue as binary, suggesting that the only options are to abolish minimum wage or face unemployment, ignoring potential middle-ground solutions.",
+          "confidence": 0.7
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces multiple assumptions about economic behavior without sufficient justification, making it less parsimonious.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice to those who support minimum wage, instead framing it as a misunderstanding of economics.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument fails to provide substantial evidence to support its claims, making it less credible.",
+          "confidence": 0.7
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument lacks empirical evidence to substantiate its claims about minimum wage and its effects.",
+          "confidence": 0.6
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not clearly delineate between what is and isn't possible in economic outcomes, failing to provide a clear framework.",
+          "confidence": 0.6
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made in the argument are not easily testable or falsifiable, as they rely on broad generalizations.",
+          "confidence": 0.7
+        }
+      ]
+    }
+  },
+  "T3_01": {
+    "tier": 3,
+    "target_lo": 40,
+    "target_hi": 60,
+    "label": "Reasonable but overgeneralized health claim",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes that exercise alone can probably cure most mild mental health conditions without medication based on limited evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "false_dilemma",
+          "reason": "The argument implies that the only options for treating mild mental health conditions are exercise or overprescribing antidepressants, ignoring other potential treatments.",
+          "confidence": 0.7
+        },
+        {
+          "key": "appeal_to_emotion",
+          "reason": "The argument uses emotionally charged language regarding the pharmaceutical industry, suggesting they are overprescribing without presenting balanced evidence.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument seems to favor evidence that supports the benefits of exercise while dismissing or downplaying the efficacy of medications.",
+          "confidence": 0.7
+        },
+        {
+          "key": "belief_perseverance",
+          "reason": "The argument maintains that lifestyle changes would work for nearly everyone, suggesting a strong belief in this idea despite potential contrary evidence.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument claims that exercise can cure most mild mental health conditions, which is a broad generalization not supported by all evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "should_statements",
+          "reason": "The argument implies that people should rely on lifestyle changes instead of medication, which reflects a rigid belief about what should be done.",
+          "confidence": 0.6
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument complicates the issue by suggesting a binary choice between exercise and medication, rather than considering a more nuanced approach.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument attributes overprescription to the pharmaceutical industry's motives without considering other factors like patient needs or medical advice.",
+          "confidence": 0.6
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument lacks sufficient evidence to support the claim that exercise alone can cure mild mental health conditions, making it a claim that should be scrutinized.",
+          "confidence": 0.8
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The argument presents a claim that lacks empirical support, which is a violation of the standard for extraordinary claims.",
+          "confidence": 0.8
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not provide a clear, testable hypothesis that can be easily disproven, as it relies on broad generalizations.",
+          "confidence": 0.6
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The argument makes claims that are not easily falsifiable, as it suggests that exercise can cure conditions without specifying conditions under which this would be proven false.",
+          "confidence": 0.7
+        }
+      ]
+    }
+  },
+  "T3_02": {
+    "tier": 3,
+    "target_lo": 40,
+    "target_hi": 60,
+    "label": "Partially supported climate argument",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "ad_hominem",
+          "reason": "The argument labels environmentalists who oppose nuclear power as 'irrational and emotional', attacking their character rather than addressing their arguments.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes from France's nuclear program to claim that all opposition to nuclear power is unfounded, without sufficient evidence to support such a broad conclusion.",
+          "confidence": 0.8
+        },
+        {
+          "key": "appeal_to_emotion",
+          "reason": "The argument suggests that opposition to nuclear power is based on irrational emotions, which may evoke a dismissive emotional response rather than a rational discussion.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument appears to favor evidence supporting nuclear power while dismissing opposing views, indicating a bias towards confirming pre-existing beliefs.",
+          "confidence": 0.8
+        },
+        {
+          "key": "belief_perseverance",
+          "reason": "The argument maintains that opposition to nuclear power is unfounded despite potential valid concerns, suggesting a refusal to reconsider beliefs in light of new evidence.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes sweeping claims about the irrationality of all environmentalists opposing nuclear power based on limited evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "emotional_reasoning",
+          "reason": "The argument implies that emotional responses are the basis for opposition to nuclear power, which distorts the reasoning process by attributing emotion over rationality.",
+          "confidence": 0.7
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument complicates the solution to climate change by introducing nuclear power as a necessary component without adequately justifying this complexity.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument assumes that opposition to nuclear power is purely emotional and irrational, failing to consider that opponents may have valid, rational concerns.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument does not sufficiently demonstrate that the claims made about nuclear power are true, relying instead on anecdotal evidence from France.",
+          "confidence": 0.8
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument does not provide sufficient evidence to support the claim that nuclear power is safe, relying on a single example rather than broader evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not adequately address the complexity of the issues surrounding nuclear power and climate change, oversimplifying the debate.",
+          "confidence": 0.7
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made about nuclear power and its opposition are not structured in a way that allows for clear falsification, making them less scientifically rigorous.",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "T3_03": {
+    "tier": 3,
+    "target_lo": 40,
+    "target_hi": 60,
+    "label": "Work-from-home argument with bias",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes from the experiences of several companies during the pandemic to conclude that remote work is better for productivity in every situation.",
+          "confidence": 0.8
+        },
+        {
+          "key": "ad_hominem",
+          "reason": "The argument attacks the character of companies that force a return to the office by labeling them as 'old-fashioned' and 'afraid of change' rather than addressing their reasons.",
+          "confidence": 0.7
+        },
+        {
+          "key": "strawman",
+          "reason": "The argument oversimplifies the position of companies advocating for in-office work by suggesting they are merely motivated by a desire to micromanage, ignoring other potential reasons.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument selectively highlights positive outcomes of remote work while ignoring potential downsides or counterexamples.",
+          "confidence": 0.7
+        },
+        {
+          "key": "fundamental_attribution",
+          "reason": "The argument attributes the motivation of companies enforcing in-office work to personal failings (fear of change) rather than considering structural or economic factors.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument claims that the data 'clearly favors remote work in every situation,' which is an overgeneralization from specific cases.",
+          "confidence": 0.8
+        },
+        {
+          "key": "mind_reading",
+          "reason": "The argument assumes the intentions of companies that want to return to the office, suggesting they are motivated by a desire to micromanage without evidence.",
+          "confidence": 0.7
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument complicates the issue by attributing multiple motivations to companies enforcing office work rather than considering simpler explanations.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument fails to apply Hanlon's razor, assuming malice ('fear of change') rather than considering that companies may have valid reasons for their policies.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument does not provide sufficient evidence for its claims, which aligns with Hitchens' razor that claims without evidence can be dismissed without evidence.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument lacks rigorous evidence and relies on anecdotal claims, failing to meet Sagan's standard for extraordinary claims requiring extraordinary evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": false,
+          "reason": "The argument does not adequately differentiate between the claims of remote work benefits and the complexities of workplace dynamics, failing to apply this razor effectively.",
+          "confidence": 0.7
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made in the argument are not easily falsifiable, particularly the assertion that 'data clearly favors remote work in every situation.'",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "T3_04": {
+    "tier": 3,
+    "target_lo": 40,
+    "target_hi": 60,
+    "label": "AI argument with missing nuance",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes from the specific cases of manufacturing and data entry roles to all jobs, suggesting that AI will displace many jobs without sufficient evidence for all job categories.",
+          "confidence": 0.8
+        },
+        {
+          "key": "false_dilemma",
+          "reason": "The argument implies that the outcome of AI will either benefit the wealthy or leave workers behind, without considering other possible outcomes or solutions.",
+          "confidence": 0.7
+        },
+        {
+          "key": "appeal_to_emotion",
+          "reason": "The argument uses emotionally charged language regarding workers being 'left behind,' which may evoke fear and concern rather than relying solely on logical reasoning.",
+          "confidence": 0.8
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "negativity_bias",
+          "reason": "The argument emphasizes the negative consequences of AI on jobs while downplaying or not adequately addressing the potential positive outcomes, such as new job creation.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument suggests that AI will displace 'many jobs' based on a few examples, which may not represent the entire job market.",
+          "confidence": 0.8
+        },
+        {
+          "key": "catastrophizing",
+          "reason": "The argument implies that the displacement of jobs will lead to significant negative consequences for workers without acknowledging potential mitigations or adaptations.",
+          "confidence": 0.7
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces multiple assumptions about the impact of AI without considering simpler explanations or outcomes, making it less parsimonious.",
+          "confidence": 0.6
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice to the wealthy or those developing AI; it suggests a systemic issue rather than individual intent.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument lacks sufficient evidence to support the claim that AI will predominantly benefit the wealthy, making it a weak assertion.",
+          "confidence": 0.7
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument does not provide strong evidence for its claims about job displacement and wealth inequality, which are significant assertions.",
+          "confidence": 0.7
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not make claims that are unfalsifiable; it discusses potential outcomes that can be evaluated as evidence emerges.",
+          "confidence": 0.9
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The claims made in the argument can be tested and potentially disproven with future data regarding job displacement and economic outcomes.",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "T3_05": {
+    "tier": 3,
+    "target_lo": 40,
+    "target_hi": 60,
+    "label": "Education reform take",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes from the success of Finland's education system to the conclusion that it should be adopted entirely, without adequately addressing the cultural and economic differences that may affect implementation.",
+          "confidence": 0.8
+        },
+        {
+          "key": "false_cause",
+          "reason": "The argument implies a direct causal relationship between adopting Finland's model and improved educational outcomes without considering other factors that contribute to Finland's success.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument selectively highlights research supporting active learning and spaced repetition while ignoring potential evidence that may support traditional methods.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument suggests that because Finland's system works well, it will work well universally, which overlooks the complexities of different educational contexts.",
+          "confidence": 0.7
+        },
+        {
+          "key": "should_statements",
+          "reason": "The argument implies that we 'should' adopt Finland's model entirely, which reflects an unrealistic expectation without considering practical limitations.",
+          "confidence": 0.6
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument complicates the issue by suggesting a complete adoption of Finland's model without addressing the complexities involved, which goes against the principle of simplicity.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice or ill intent to those who support traditional education methods, focusing instead on the effectiveness of different approaches.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument does not sufficiently challenge the status quo of traditional education, instead advocating for a complete shift without critical examination of the existing system.",
+          "confidence": 0.7
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument lacks empirical evidence to support the claim that Finland's model will work universally, which does not meet the standard of requiring extraordinary evidence for extraordinary claims.",
+          "confidence": 0.7
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not invoke unnecessary complexity; it focuses on a specific educational model and its perceived effectiveness.",
+          "confidence": 0.8
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The argument makes claims about the effectiveness of Finland's model without providing a clear method for testing or falsifying those claims.",
+          "confidence": 0.7
+        }
+      ]
+    }
+  },
+  "T3_06": {
+    "tier": 3,
+    "target_lo": 40,
+    "target_hi": 60,
+    "label": "Reasonable economic argument with gaps",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes the positive outcomes from pilot programs in Finland and Stockton to suggest that universal basic income will have similar effects universally.",
+          "confidence": 0.8
+        },
+        {
+          "key": "false_cause",
+          "reason": "The argument implies a direct causal relationship between universal basic income and reduced poverty without adequately addressing other potential influencing factors.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "optimism_bias",
+          "reason": "The argument presents a very positive view of universal basic income without adequately addressing potential drawbacks or challenges beyond funding.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument takes specific positive outcomes from limited pilot programs and applies them broadly to all contexts without sufficient evidence.",
+          "confidence": 0.8
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument does not present the simplest explanation for the outcomes observed, as it overlooks other factors that could contribute to the results.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice or ill intent to those opposing universal basic income, focusing instead on practical challenges.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument does not sufficiently challenge the assumptions behind the funding mechanisms proposed, which could be seen as a lack of rigorous scrutiny.",
+          "confidence": 0.6
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument lacks robust empirical evidence beyond pilot programs, which does not meet the standard of extraordinary claims requiring extraordinary evidence.",
+          "confidence": 0.7
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not invoke unnecessary complexity and focuses on practical solutions to funding, which aligns with simplicity.",
+          "confidence": 0.8
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The claims made in the argument are not easily falsifiable, as they rely on subjective outcomes like mental health improvements.",
+          "confidence": 0.7
+        }
+      ]
+    }
+  },
+  "T4_01": {
+    "tier": 4,
+    "target_lo": 65,
+    "target_hi": 85,
+    "label": "Well-structured Reddit argument on sleep",
+    "raw_detections": {
+      "logical_fallacies": [],
+      "cognitive_biases": [],
+      "cognitive_distortions": [],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": true,
+          "reason": "The argument presents a straightforward explanation of the relationship between sleep deprivation and health outcomes without unnecessary complexity.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice or intent to those who may disagree with the findings but rather presents evidence-based claims.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument relies on empirical evidence from studies rather than assertions that cannot be tested or verified.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The argument is based on scientific evidence and does not rely on extraordinary claims without sufficient evidence.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not invoke supernatural explanations and stays within the realm of scientific inquiry.",
+          "confidence": 0.9
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The claims made in the argument can be tested and potentially falsified through further research.",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "T4_02": {
+    "tier": 4,
+    "target_lo": 65,
+    "target_hi": 85,
+    "label": "Evidence-based argument on reading",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes the benefits of reading based on specific studies without sufficient evidence to support the broader claim that reading universally improves vocabulary, empathy, and cognitive reserve.",
+          "confidence": 0.7
+        },
+        {
+          "key": "false_cause",
+          "reason": "The argument implies a causal relationship between reading and cognitive decline without adequately addressing other potential confounding factors that could influence cognitive decline.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument emphasizes studies that support the benefits of reading while not addressing any contrary evidence or studies that may suggest otherwise.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes broad claims about the effects of reading on cognitive abilities based on limited evidence, suggesting that all reading is beneficial without acknowledging nuances.",
+          "confidence": 0.7
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces multiple claims and studies without simplifying the explanation of how reading affects cognitive abilities, which complicates the understanding of the relationship.",
+          "confidence": 0.6
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice or intent to the studies cited, focusing instead on the findings themselves.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument does not adequately challenge the claims made by the studies, potentially accepting them without sufficient scrutiny.",
+          "confidence": 0.6
+        },
+        {
+          "key": "sagan_standard",
+          "pass": false,
+          "reason": "The argument lacks rigorous skepticism regarding the claims made about reading, failing to demand sufficient evidence for the assertions.",
+          "confidence": 0.6
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not engage in unfalsifiable claims; it presents findings that can be tested and verified.",
+          "confidence": 0.8
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The claims made in the argument can be tested and potentially falsified through further research, adhering to the principle of falsifiability.",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "T4_03": {
+    "tier": 4,
+    "target_lo": 65,
+    "target_hi": 85,
+    "label": "Nuanced tech argument",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes the reliability of open-source software based on specific examples (Linux and PostgreSQL) without considering the broader context of all open-source projects.",
+          "confidence": 0.7
+        },
+        {
+          "key": "false_dilemma",
+          "reason": "The argument suggests that the key factor for software reliability is either open-source or closed-source, which oversimplifies the issue by not considering other factors that could affect reliability.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument emphasizes the successes of specific open-source projects while downplaying or ignoring instances where open-source projects may have failed or been less secure.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes broad claims about open-source software being more reliable based on limited examples, which may not represent the entire category of open-source projects.",
+          "confidence": 0.7
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": true,
+          "reason": "The argument presents a straightforward explanation for software reliability based on community engagement rather than introducing unnecessary complexity.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice to the developers of proprietary software, focusing instead on the structural differences in review capacity.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument provides evidence to support its claims, which aligns with the principle that extraordinary claims require extraordinary evidence.",
+          "confidence": 0.7
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The argument is grounded in empirical evidence from specific projects, meeting the standard of requiring evidence for claims.",
+          "confidence": 0.7
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not invoke unnecessary metaphysical claims, focusing on practical outcomes instead.",
+          "confidence": 0.8
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The claims made can be tested and potentially falsified through empirical evidence, adhering to the principle of falsifiability.",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "T4_04": {
+    "tier": 4,
+    "target_lo": 65,
+    "target_hi": 85,
+    "label": "Qualified public health argument",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes the effectiveness of fluoride based on epidemiological studies without addressing potential confounding factors or variability in different populations.",
+          "confidence": 0.7
+        },
+        {
+          "key": "strawman",
+          "reason": "The argument suggests that opposition conflates industrial fluoride waste with controlled concentrations, which may misrepresent the actual arguments made by opponents.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument emphasizes the positive effects of fluoride while downplaying or not addressing the concerns raised by opponents, indicating a bias towards confirming the pro-fluoride stance.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument claims that fluoride reduces dental caries by approximately 25% without acknowledging that this effect may not be uniform across all demographics or conditions.",
+          "confidence": 0.6
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": true,
+          "reason": "The argument presents a straightforward explanation for the benefits of fluoride without unnecessary complexity.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": false,
+          "reason": "The argument implies that opposition to fluoride is based on misunderstanding rather than legitimate concerns, which may not align with Hanlon's razor.",
+          "confidence": 0.7
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument provides evidence for fluoride's benefits, which aligns with the principle that claims require substantial evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The argument is based on scientific evidence from epidemiological studies, meeting the standard for extraordinary claims requiring extraordinary evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not invoke supernatural explanations and relies on empirical evidence, thus passing this razor.",
+          "confidence": 0.9
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The claims made about fluoride can be tested and potentially falsified through further research, adhering to Popper's criterion.",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "T4_05": {
+    "tier": 4,
+    "target_lo": 65,
+    "target_hi": 85,
+    "label": "Well-reasoned policy argument",
+    "raw_detections": {
+      "logical_fallacies": [
+        {
+          "key": "hasty_generalization",
+          "reason": "The argument generalizes the effectiveness of congestion pricing based on the specific cases of London and Stockholm without considering other contexts or potential failures.",
+          "confidence": 0.8
+        },
+        {
+          "key": "false_cause",
+          "reason": "The argument implies a direct causal relationship between congestion pricing and traffic reduction without accounting for other factors that may have contributed to the observed outcomes.",
+          "confidence": 0.7
+        }
+      ],
+      "cognitive_biases": [
+        {
+          "key": "confirmation_bias",
+          "reason": "The argument selectively highlights successful examples of congestion pricing while downplaying or ignoring potential criticisms or failures.",
+          "confidence": 0.7
+        },
+        {
+          "key": "optimism_bias",
+          "reason": "The argument presents a very positive view of congestion pricing's effects without adequately addressing the regressive nature of the policy or the potential downsides.",
+          "confidence": 0.6
+        }
+      ],
+      "cognitive_distortions": [
+        {
+          "key": "overgeneralization",
+          "reason": "The argument makes broad claims about the effectiveness of congestion pricing based on limited evidence from two cities.",
+          "confidence": 0.7
+        },
+        {
+          "key": "should_statements",
+          "reason": "The argument implies that congestion pricing should be implemented because it is effective in some cases, suggesting a normative stance without sufficient justification.",
+          "confidence": 0.6
+        }
+      ],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": false,
+          "reason": "The argument introduces multiple factors (traffic reduction, air quality, revenue for transit) without clearly demonstrating that congestion pricing is the simplest explanation for these outcomes.",
+          "confidence": 0.6
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice to critics of congestion pricing but acknowledges their concerns, suggesting a fair consideration of differing viewpoints.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": false,
+          "reason": "The argument does not sufficiently challenge the assumptions behind the criticisms of congestion pricing, particularly regarding its regressive nature.",
+          "confidence": 0.7
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The argument provides evidence (traffic reduction and air quality improvements) to support its claims, adhering to the standard of requiring evidence for extraordinary claims.",
+          "confidence": 0.8
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not invoke unnecessary complexity and focuses on the practical implications of congestion pricing, aligning with the razor's principle.",
+          "confidence": 0.7
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": false,
+          "reason": "The argument does not present a clear way to test or falsify the effectiveness of congestion pricing beyond the specific cases mentioned.",
+          "confidence": 0.6
+        }
+      ]
+    }
+  },
+  "T4_06": {
+    "tier": 4,
+    "target_lo": 65,
+    "target_hi": 85,
+    "label": "Balanced psychology argument",
+    "raw_detections": {
+      "logical_fallacies": [],
+      "cognitive_biases": [],
+      "cognitive_distortions": [],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": true,
+          "reason": "The argument presents a straightforward explanation of CBT's efficacy without unnecessary complexity.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice or intent to those who may prefer medication over CBT.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument provides evidence for CBT's efficacy, making it a reasonable claim without requiring extraordinary evidence.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The argument is based on scientific evidence and does not make extraordinary claims without support.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not present unfalsifiable claims; it is grounded in empirical research.",
+          "confidence": 0.9
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The claims made about CBT can be tested and are based on verifiable evidence.",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "T5_01": {
+    "tier": 5,
+    "target_lo": 85,
+    "target_hi": 100,
+    "label": "Strong scientific argument on evolution",
+    "raw_detections": {
+      "logical_fallacies": [],
+      "cognitive_biases": [],
+      "cognitive_distortions": [],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": true,
+          "reason": "The argument provides multiple lines of evidence without unnecessary complexity, aligning with the principle of simplicity in explanations.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice or intent to those who may disagree with evolution, focusing instead on evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument relies on empirical evidence rather than faith or unfounded claims, adhering to the standard of requiring evidence for assertions.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The argument emphasizes the importance of evidence and skepticism in evaluating claims about evolution.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not invoke untestable claims, focusing instead on verifiable scientific evidence.",
+          "confidence": 0.9
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The claims made in the argument are testable and falsifiable through scientific methods, aligning with Popper's criterion.",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "T5_02": {
+    "tier": 5,
+    "target_lo": 85,
+    "target_hi": 100,
+    "label": "Rigorous argument on germ theory",
+    "raw_detections": {
+      "logical_fallacies": [],
+      "cognitive_biases": [],
+      "cognitive_distortions": [],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": true,
+          "reason": "The argument presents a straightforward explanation of germ theory without unnecessary complexity.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice to those who might disagree with germ theory, focusing instead on evidence.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument provides substantial evidence to support germ theory, which is a clear and testable claim.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The argument relies on empirical evidence and scientific reasoning, adhering to the standards of skepticism.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument is focused on empirical validation and does not invoke unverifiable claims.",
+          "confidence": 0.9
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The argument emphasizes the falsifiability of germ theory, aligning with Popper's criterion for scientific theories.",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "T5_03": {
+    "tier": 5,
+    "target_lo": 85,
+    "target_hi": 100,
+    "label": "Strong empirical argument on seatbelts",
+    "raw_detections": {
+      "logical_fallacies": [],
+      "cognitive_biases": [],
+      "cognitive_distortions": [],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": true,
+          "reason": "The argument presents a straightforward explanation for the benefits of seatbelt laws without unnecessary assumptions or complications.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice to those opposing seatbelt laws but rather addresses their concerns through a cost-benefit analysis.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument provides empirical evidence to support its claims, which can be scrutinized and tested.",
+          "confidence": 0.85
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The argument relies on scientific evidence and analysis rather than unfounded claims or beliefs.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not invoke unnecessary complexity; it focuses on clear, measurable outcomes of seatbelt laws.",
+          "confidence": 0.8
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The claims made in the argument can be tested and potentially disproven through further empirical study.",
+          "confidence": 0.85
+        }
+      ]
+    }
+  },
+  "T5_04": {
+    "tier": 5,
+    "target_lo": 85,
+    "target_hi": 100,
+    "label": "Evidence-based argument on hand hygiene",
+    "raw_detections": {
+      "logical_fallacies": [],
+      "cognitive_biases": [],
+      "cognitive_distortions": [],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": true,
+          "reason": "The argument does not introduce unnecessary complexities and adheres to the simplest explanation for the effectiveness of hand hygiene in preventing infections.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice or intent to those who may neglect hand hygiene; it focuses on the evidence and outcomes.",
+          "confidence": 0.8
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument presents a claim that is supported by empirical evidence, making it a reasonable assertion rather than an unfounded belief.",
+          "confidence": 0.85
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The argument is based on observable and verifiable evidence regarding hand hygiene and its effects on infection rates.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument is grounded in scientific evidence and does not rely on unverifiable claims.",
+          "confidence": 0.9
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The claim regarding hand hygiene is falsifiable, as indicated by the potential for compliance to increase without a corresponding decrease in infection rates.",
+          "confidence": 0.95
+        }
+      ]
+    }
+  },
+  "T5_05": {
+    "tier": 5,
+    "target_lo": 85,
+    "target_hi": 100,
+    "label": "Strong empirical argument on lead exposure",
+    "raw_detections": {
+      "logical_fallacies": [],
+      "cognitive_biases": [],
+      "cognitive_distortions": [],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": true,
+          "reason": "The argument presents a straightforward causal relationship supported by empirical evidence without unnecessary complexity.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice or intent where simpler explanations suffice; it focuses on causal mechanisms.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument relies on substantial evidence to support its claims, avoiding the burden of proof on the skeptic.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The argument is based on empirical data and scientific studies, adhering to the principle of requiring extraordinary evidence for extraordinary claims.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument does not present unfalsifiable claims; it is grounded in observable phenomena and data.",
+          "confidence": 0.9
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The claims made in the argument are testable and falsifiable through empirical research.",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "T5_06": {
+    "tier": 5,
+    "target_lo": 85,
+    "target_hi": 100,
+    "label": "Rigorous argument on plate tectonics",
+    "raw_detections": {
+      "logical_fallacies": [],
+      "cognitive_biases": [],
+      "cognitive_distortions": [],
+      "philosophical_razors": [
+        {
+          "key": "occams_razor",
+          "pass": true,
+          "reason": "The argument presents a straightforward explanation of plate tectonics supported by multiple lines of evidence without unnecessary complexity.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hanlons_razor",
+          "pass": true,
+          "reason": "The argument does not attribute malice or intent to opposing views but focuses on evidence.",
+          "confidence": 0.9
+        },
+        {
+          "key": "hitchens_razor",
+          "pass": true,
+          "reason": "The argument provides substantial evidence and does not rely on faith or unverified claims.",
+          "confidence": 0.9
+        },
+        {
+          "key": "sagan_standard",
+          "pass": true,
+          "reason": "The claims made are based on empirical evidence and scientific methodology.",
+          "confidence": 0.9
+        },
+        {
+          "key": "newtons_flaming_laser_sword",
+          "pass": true,
+          "reason": "The argument is grounded in observable phenomena and does not invoke unverifiable claims.",
+          "confidence": 0.9
+        },
+        {
+          "key": "poppers_falsifiability",
+          "pass": true,
+          "reason": "The theory of plate tectonics makes specific, testable predictions that can be falsified.",
+          "confidence": 0.9
+        }
+      ]
+    }
+  }
+}

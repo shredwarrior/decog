@@ -1,0 +1,156 @@
+================================================================================
+  ARGUMENT ANALYSER — ESSENTIALS-ONLY BUSINESS PLAN
+  Cognition Today | Feb 2026
+================================================================================
+
+
+PROBLEM
+-------
+- 60% of hiring managers say graduates lack critical thinking skills.
+- 40% of college students cannot identify an essay thesis.
+- No accessible tool exists that scores argument quality with a transparent,
+  calibrated framework. Current options are thin LLM wrappers that list
+  fallacies without scoring, context, or educational value.
+- Online discourse rewards rhetoric over reasoning. Users have no way to
+  objectively assess whether their argument is structurally sound before
+  publishing it.
+
+
+POSSIBLE MARKETS
+----------------
+1. Students (university, debate clubs, writing courses)
+   - Use case: self-check essays and arguments before submission.
+   - Entry: free tier with basic analysis; professors assign it.
+
+2. Content creators / bloggers / journalists
+   - Use case: verify reasoning quality before publishing.
+   - Entry: freemium with share badges for credibility signaling.
+
+3. Online debaters / Reddit / X power users
+   - Use case: shareable score cards that validate argument strength.
+   - Entry: free tier with social sharing. Viral loop potential.
+
+4. Corporate training / L&D departments
+   - Use case: critical thinking assessment for employees.
+   - Entry: institutional licensing (later stage, requires traction proof).
+
+5. EdTech integration
+   - Use case: plugin or API for LMS platforms (Canvas, Moodle).
+   - Entry: API tier with per-analysis pricing.
+
+
+COMPETITIVE ANALYSIS
+--------------------
+Competitor              | Model           | Price             | Weakness
+------------------------|-----------------|-------------------|---------------------------
+dontmanipulate.me       | Fallacy-only    | €7/300 runs       | No scoring, no biases,
+                        | LLM wrapper     |                   | no transparency, no depth
+Fallacious (Vercel)     | Fallacy-only    | Free              | No scoring, no biases,
+                        | LLM wrapper     |                   | static output
+ChatGPT custom GPTs     | Prompt-only     | ChatGPT sub       | Non-deterministic, no
+                        |                 |                   | framework, no persistence
+FunBlocks LogicLens     | Bias + mind map | Freemium          | Shallow, no razors,
+                        |                 |                   | no calibrated scoring
+ThinkerAnalytix         | Argument maps   | Institutional     | Not accessible to
+                        |                 |                   | individuals, no scoring
+Elenqa                  | Voice debate AI | Beta/classroom    | Oral only, no text
+                        |                 |                   | analysis, different use
+
+Our edge:
+- Only tool with calibrated scoring (grid-search optimized weights).
+- Two-stage metadata pipeline (structural + epistemic) before judgment.
+- Bias hierarchy with specificity-first deduplication.
+- Philosophical razors (6) with pass/fail and falsifiability gating.
+- Domain expertise: built by a cognitive psychologist, not a developer
+  prompt-engineering a wrapper.
+- Content moat: Cognition Today literature for premium explanations.
+
+
+REVENUE STREAMS
+---------------
+1. Freemium SaaS
+   - Free: 300-word limit, basic analysis, 3 analyses/day.
+   - Pro ($5-8/month): 2000-word limit, full metadata transparency,
+     literature-backed improvement suggestions, argument badge,
+     unlimited analyses.
+
+2. API access
+   - Per-analysis pricing for EdTech integrations.
+   - $0.02-0.05 per analysis (covers LLM cost + margin).
+
+3. Content funnel to Cognition Today
+   - Every analysis links to relevant CT articles.
+   - Tool drives organic traffic and newsletter signups.
+   - Ad revenue on CT benefits from tool-driven traffic.
+
+4. Institutional / classroom licensing (later stage)
+   - Bulk pricing for universities: $200-500/semester per course.
+   - Dashboard for professors to see class-wide analysis patterns.
+
+5. Validated argument badges (later stage)
+   - Shareable credential for arguments scoring >75.
+   - Potential micro-transaction: $1 per verified badge.
+
+
+SCALING BUDGET
+--------------
+Phase 0 — MVP launch (now)
+  Railway Starter + PostgreSQL:     $12/month
+  OpenAI API (50 users/day):         $6/month
+  Domain / DNS:                      $1/month
+  Total:                           ~$19/month
+
+Phase 1 — Early traction (100 users/day)
+  Railway compute:                   $5/month
+  Railway PostgreSQL:                $7/month
+  OpenAI API:                       $12/month
+  Total:                           ~$24/month
+
+Phase 2 — Growing (500 users/day)
+  Railway Pro:                      $20/month
+  PostgreSQL (scaled):              $15/month
+  OpenAI API:                       $60/month
+  Freelance dev (one-off fixes):   $200/quarter
+  Total:                           ~$115/month
+  Break-even: ~20 Pro subscribers at $6/month covers API + infra.
+
+Phase 3 — Scale (2000+ users/day)
+  Dedicated compute:                $50/month
+  PostgreSQL:                       $30/month
+  OpenAI API:                      $240/month
+  Custom metadata model (replaces Call 1, saves ~30%): -$70/month
+  Total:                           ~$250/month
+  Break-even: ~45 Pro subscribers or 1 institutional license.
+
+
+IMMEDIATE NEXT STEPS (post-MVP ship)
+-------------------------------------
+1. Ship to Railway with PostgreSQL.
+
+2. Expert validation system:
+   Add per-bias/fallacy/distortion rating buttons visible to admin users
+   (you + invited experts). Options: "correct" / "loose" / "wrong".
+   Store in a validations table: analysis_id, issue_key, issue_type,
+   expert_id, rating, timestamp.
+   This becomes ground truth for future model training AND a quality
+   metric to advertise ("92% expert-validated accuracy").
+
+3. Full metadata persistence in database:
+   Expand analyses table to store: raw per-claim metadata (JSON blob),
+   all detected issues with confidence scores, razor pass/fail with
+   reasons, score breakdown, improvements, executive summary.
+   One row per analysis, no additional LLM call needed to reproduce
+   the full report. This is the training dataset for the future
+   custom model.
+
+4. Curate additional biases:
+   Aditya to review taxonomy and add missing biases/distortions.
+   System is designed for this — just add entries to definitions.json
+   with name, description, penalty, and improvement hints.
+
+5. Collect user feedback:
+   Thumbs up/down on each analysis. Simple signal, high value over time.
+
+6. Organic growth:
+   Embed tool on Cognition Today. Share interesting analyses on social.
+   Target psychology/philosophy subreddits and edu Twitter.

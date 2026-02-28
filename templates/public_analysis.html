@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>de-cognition: argument analyser</title>
+    <meta name="description" content="de-cognition: find errors in opinions">
+    <meta name="author" content="Cognition Today, Individual">
+    <link rel="canonical" href="{{ request.url }}">
+    <meta property="og:title" content="de-cognition: find errors in opinions">
+    <meta property="og:description" content="de-cognition: argument analyser">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="de-cognition: argument analyser">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:image" content="{{ url_for('static', filename='logo.png', _external=True) }}">
+    <meta property="og:image:alt" content="de-cognition logo">
+    <meta property="og:locale" content="en_US">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="de-cognition: find errors in opinions">
+    <meta name="twitter:description" content="de-cognition: argument analyser">
+    <meta name="twitter:image" content="{{ url_for('static', filename='logo.png', _external=True) }}">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f6fa;
+            color: #222;
+            min-height: 100vh;
+            padding: 0 0 40px;
+        }
+        .top-bar {
+            background: #000;
+            color: #fff;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .top-bar .brand { font-weight: 900; font-size: 1.05em; }
+        .top-bar .brand span { color: #4be4ff; }
+        .top-bar a { color: #4be4ff; text-decoration: none; font-weight: 600; font-size: 0.9em; }
+        .top-bar a:hover { text-decoration: underline; }
+
+        .container { max-width: 720px; margin: 0 auto; padding: 28px 20px; }
+
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+            padding: 24px 28px;
+            margin-bottom: 20px;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .score-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .circle {
+            width: 110px; height: 110px; border-radius: 50%;
+            display: grid; place-items: center;
+            background: conic-gradient(var(--c) calc(var(--pct) * 3.6deg), #eaeaea 0deg);
+            border: 3px solid var(--c);
+        }
+        .circle-inner {
+            width: 82px; height: 82px; border-radius: 50%; background: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 1.7em; color: #222;
+        }
+        .circle-label { font-weight: 700; font-size: 0.85em; color: #555; }
+
+        .status-label { font-weight: 800; font-size: 1.1em; color: #111; text-align: center; margin-bottom: 4px; }
+        .status-text { font-size: 0.92em; color: #444; text-align: center; line-height: 1.5; margin-bottom: 12px; }
+
+        .arg-quote {
+            background: #f8f9fa; border-left: 4px solid #4be4ff;
+            padding: 14px 18px; border-radius: 8px; margin-bottom: 16px;
+            font-size: 0.9em; color: #333; line-height: 1.55;
+            font-style: italic; white-space: pre-wrap;
+        }
+
+        h2 { font-size: 1em; font-weight: 700; color: #111; margin-bottom: 10px; }
+        h3 { font-size: 0.9em; font-weight: 700; color: #333; margin: 12px 0 6px; }
+
+        .exec-sentence { font-size: 0.92em; color: #222; margin-bottom: 8px; line-height: 1.5; }
+        .exec-bullets { padding-left: 20px; font-size: 0.85em; color: #444; line-height: 1.6; }
+        .exec-bullets li { margin-bottom: 4px; }
+
+        .issue-card {
+            background: #f8f9fa; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px;
+        }
+        .issue-name { font-weight: 700; font-size: 0.88em; color: #111; }
+        .issue-detail { font-size: 0.8em; color: #555; margin-top: 2px; line-height: 1.4; }
+
+        .razor-card { background: #f8f9fa; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; }
+        .razor-pass { border-left: 4px solid #4CAF50; }
+        .razor-fail { border-left: 4px solid #F44336; }
+        .razor-name { font-weight: 700; font-size: 0.88em; color: #111; }
+        .razor-status { font-size: 0.78em; font-weight: 600; }
+        .razor-status.pass { color: #4CAF50; }
+        .razor-status.fail { color: #F44336; }
+        .razor-reason { font-size: 0.8em; color: #555; margin-top: 2px; }
+
+        .improvements-list { padding-left: 20px; font-size: 0.85em; color: #333; line-height: 1.6; }
+        .improvements-list li { margin-bottom: 6px; }
+
+        .cta-row {
+            display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .cta-btn {
+            display: inline-block; padding: 12px 28px;
+            background: #4be4ff; color: #000; text-decoration: none;
+            border-radius: 10px; font-weight: 700; font-size: 0.95em;
+            transition: background 0.15s;
+        }
+        .cta-btn:hover { background: #3ad3ee; }
+        .cta-btn.secondary { background: #111; color: #fff; }
+        .cta-btn.secondary:hover { background: #333; }
+
+        .social-row { display: flex; justify-content: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .social-btn {
+            padding: 8px 16px; border: 1px solid #ddd; border-radius: 6px;
+            background: #fff; color: #333; text-decoration: none;
+            font-size: 0.82em; font-weight: 600; transition: background 0.15s;
+        }
+        .social-btn:hover { background: #f0f0f0; }
+
+        .footer-note { text-align: center; font-size: 0.78em; color: #999; margin-top: 28px; }
+        .footer-note a { color: #4be4ff; text-decoration: none; }
+
+        @media (max-width: 500px) {
+            .container { padding: 16px 12px; }
+            .card { padding: 18px 16px; }
+            .circle { width: 90px; height: 90px; }
+            .circle-inner { width: 66px; height: 66px; font-size: 1.4em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="brand">Cognition <span>Today</span></div>
+        <a href="/">Analyze your own argument &rarr;</a>
+    </div>
+
+    <div class="container">
+
+        {% set score = analysis.score|int %}
+        {% set dim = breakdown.get('dimension_scores', {}) %}
+        {% set bias = dim.get('bias_score', 0)|round|int %}
+        {% set testability = dim.get('testability_score', breakdown.get('razor_alignment', 0))|round|int %}
+        {% set logic = dim.get('logic_score', breakdown.get('logic_integrity_score', 0))|round|int %}
+
+        <!-- Scores -->
+        <div class="card">
+            <div class="score-row">
+                <div class="score-item">
+                    <div class="circle" style="--pct:{{ score }};--c:{{ '#4CAF50' if score >= 70 else '#FF9800' if score >= 50 else '#F44336' }}">
+                        <div class="circle-inner">{{ score }}</div>
+                    </div>
+                    <div class="circle-label">Overall</div>
+                </div>
+                <div class="score-item">
+                    <div class="circle" style="--pct:{{ bias }};--c:{{ '#4CAF50' if bias >= 70 else '#FF9800' if bias >= 30 else '#F44336' }}">
+                        <div class="circle-inner">{{ bias }}</div>
+                    </div>
+                    <div class="circle-label">Bias</div>
+                </div>
+                <div class="score-item">
+                    <div class="circle" style="--pct:{{ testability }};--c:{{ '#4CAF50' if testability >= 70 else '#FF9800' if testability >= 30 else '#F44336' }}">
+                        <div class="circle-inner">{{ testability }}</div>
+                    </div>
+                    <div class="circle-label">Testability</div>
+                </div>
+                <div class="score-item">
+                    <div class="circle" style="--pct:{{ logic }};--c:{{ '#4CAF50' if logic >= 70 else '#FF9800' if logic >= 30 else '#F44336' }}">
+                        <div class="circle-inner">{{ logic }}</div>
+                    </div>
+                    <div class="circle-label">Logic</div>
+                </div>
+            </div>
+
+            {% if analysis.status_label %}
+            <div class="status-label">{{ analysis.status_label }}</div>
+            {% endif %}
+            {% if analysis.status_message %}
+            <div class="status-text">{{ analysis.status_message }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Argument -->
+        {% if truncated_arg %}
+        <div class="card">
+            <h2>The Argument</h2>
+            <div class="arg-quote">{{ truncated_arg }}</div>
+        </div>
+        {% endif %}
+
+        <!-- Executive Summary -->
+        {% if detected.get('executive_summary_sentence') %}
+        <div class="card">
+            <h2>Executive Summary</h2>
+            <p class="exec-sentence">{{ detected.executive_summary_sentence }}</p>
+            {% if detected.get('executive_summary_bullets') %}
+            <ul class="exec-bullets">
+                {% for b in detected.executive_summary_bullets[:6] %}
+                <li>{{ b }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Detected Issues -->
+        {% set fallacies = detected.get('logical_fallacies', []) %}
+        {% set biases = detected.get('cognitive_biases', []) %}
+        {% set distortions = detected.get('cognitive_distortions', []) %}
+        {% set razors = detected.get('philosophical_razors', []) %}
+
+        {% if fallacies or biases or distortions %}
+        <div class="card">
+            <h2>Detected Issues</h2>
+
+            {% if fallacies %}
+            <h3>Logical Fallacies ({{ fallacies|length }})</h3>
+            {% for item in fallacies %}
+            <div class="issue-card">
+                <div class="issue-name">{{ item.name }}</div>
+                {% if item.get('description') %}<div class="issue-detail">{{ item.description }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if biases %}
+            <h3>Cognitive Biases ({{ biases|length }})</h3>
+            {% for item in biases %}
+            <div class="issue-card">
+                <div class="issue-name">{{ item.name }}</div>
+                {% if item.get('description') %}<div class="issue-detail">{{ item.description }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if distortions %}
+            <h3>Cognitive Distortions ({{ distortions|length }})</h3>
+            {% for item in distortions %}
+            <div class="issue-card">
+                <div class="issue-name">{{ item.name }}</div>
+                {% if item.get('description') %}<div class="issue-detail">{{ item.description }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Razors -->
+        {% if razors %}
+        <div class="card">
+            <h2>Philosophical Razors</h2>
+            {% for r in razors %}
+            <div class="razor-card {{ 'razor-pass' if r.get('pass') else 'razor-fail' }}">
+                <div class="razor-name">
+                    {{ r.name }}
+                    <span class="razor-status {{ 'pass' if r.get('pass') else 'fail' }}">
+                        {{ 'PASS' if r.get('pass') else 'FAIL' }}
+                    </span>
+                </div>
+                {% if r.get('reason') %}<div class="razor-reason">{{ r.reason }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Improvements -->
+        {% if improvements %}
+        <div class="card">
+            <h2>How to Strengthen This Argument</h2>
+            <ol class="improvements-list">
+                {% for tip in improvements %}
+                <li>{{ tip }}</li>
+                {% endfor %}
+            </ol>
+        </div>
+        {% endif %}
+
+        <!-- CTAs -->
+        <div class="cta-row">
+            <a class="cta-btn" href="/">Analyze your own argument</a>
+            <a class="cta-btn secondary" href="https://cognitiontoday.com" target="_blank" rel="noopener">Visit Cognition Today</a>
+        </div>
+
+        <div class="social-row">
+            <a class="social-btn" href="https://twitter.com/intent/tweet?text={{ ('de-cognition: find errors in opinions')|urlencode }}&url={{ request.url|urlencode }}" target="_blank" rel="noopener">Share on X</a>
+            <a class="social-btn" href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url|urlencode }}" target="_blank" rel="noopener">LinkedIn</a>
+            <a class="social-btn" href="https://www.facebook.com/sharer/sharer.php?u={{ request.url|urlencode }}" target="_blank" rel="noopener">Facebook</a>
+        </div>
+
+        <p class="footer-note">
+            Built by <a href="https://cognitiontoday.com">Cognition Today</a> &middot;
+            <a href="https://cognitiontoday.com/argument_analyzer">About this tool</a>
+        </p>
+    </div>
+</body>
+</html>

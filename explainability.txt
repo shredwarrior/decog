@@ -1,0 +1,181 @@
+================================================================================
+  ARGUMENT ANALYSER — EXPLAINABILITY: HOW METADATA MAPS TO TOKENS
+  Last updated: 2026-02-23
+================================================================================
+
+
+DATA FLOW: INPUT TEXT → PER-CLAIM METADATA → AGGREGATED FLAGS → JUDGMENT
+--------------------------------------------------------------------------
+
+1. INPUT
+   The user submits a single text string (the argument).
+
+2. CALL 1 — METADATA EXTRACTION (_extract_metadata)
+   The LLM decomposes the argument into individual claims and returns
+   a JSON array. Each element is one claim with:
+
+     claim_text  =  verbatim excerpt from the original argument
+     + 23 structural/epistemic metadata tags
+
+   The claim_text IS the token-to-metadata link. It's a substring (or
+   near-substring) of the original argument text.
+
+3. AGGREGATION (_metadata_to_context)
+   Per-claim metadata is aggregated into counts and flags:
+     "3 generalize from specific cases"
+     "2 assume intent or motive"
+     "⚑ Intent/motive assumed — check for Empathy Gap"
+   The per-claim detail is discarded at this point.
+
+4. CALL 2 — ANALYSIS
+   The aggregated context block is injected into the main LLM prompt.
+   Call 2 never sees individual claims — only the summary counts and
+   flags. It returns fallacies, biases, distortions, razors.
+
+5. POST-PROCESSING
+   Bias hierarchy deduplication, confidence filtering, umbrella injection,
+   scoring, and improvement generation happen in Python.
+
+
+EXAMPLE: POLITICIANS ARGUMENT
+------------------------------
+
+Original text:
+  "All politicians are corrupt liars. First, even though some have an
+   interest in improving the world, they fail to survive because of
+   powerful bad actors who generally protect their own cabal..."
+
+Call 1 returns (simplified):
+
+  Claim 1:
+    claim_text:           "All politicians are corrupt liars"
+    generalizes:          true
+    uses_absolute_language: true
+    assumes_intent:       true
+    emotional_tone:       "anger"
+    exemplar_type:        "none"
+    speculation_level:    "high"
+    evidence_sufficiency: "none"
+    inferential_gap:      "large"
+    face_validity:        "low"
+    claim_type:           "opinion"
+    causal_chain_length:  0
+
+  Claim 2:
+    claim_text:           "they fail to survive because of powerful bad
+                           actors who protect their own cabal"
+    makes_causal_claim:   true
+    assumes_intent:       true
+    is_falsifiable:       false
+    exemplar_type:        "none"
+    speculation_level:    "high"
+    evidence_sufficiency: "none"
+    inferential_gap:      "large"
+    causal_chain_length:  1
+    verifiability:        "not_verifiable"
+
+  Claim 3:
+    claim_text:           "in places like India, politicians have immunity
+                           and govt employees don't get fired"
+    cites_evidence:       true
+    evidence_type:        "anecdotal"
+    exemplar_type:        "famous_case"
+    face_validity:        "high"
+    speculation_level:    "low"
+    evidence_sufficiency: "moderate"
+    is_falsifiable:       true
+    verifiability:        "easily"
+
+  ... (more claims follow)
+
+_metadata_to_context aggregates this into:
+
+  STRUCTURAL PROFILE:
+    - 1 cite evidence (0 scientific, 1 anecdotal)
+    - 1 make causal claims
+    - 2 have non-neutral emotional tone
+    - 1 use absolute language
+    - 0 target a person
+    - 1 appear unfalsifiable
+    - 2 generalize from specific cases
+    - 2 assume intent or motive
+    - Exemplar types: 0 population data, 0 representative, 1 famous case,
+      0 anecdote, 2 none
+
+  FLAGS:
+    ⚑ Absolute language detected — check for All-or-Nothing / Overgeneralization
+    ⚑ Unfalsifiable claims — likely fails Popper's Falsifiability
+    ⚑ Majority speculative — watch for Hasty Generalization
+    ⚑ Intent/motive assumed — check for Empathy Gap / FAE
+    ⚑ Speculative opinion claims — check for Self-Serving Bias
+
+
+HOW claim_text RELATES TO TOKENS IN THE ORIGINAL TEXT
+------------------------------------------------------
+
+The claim_text field is a SEMANTIC excerpt, not a character-offset span.
+The LLM may slightly paraphrase, truncate, or reorder words.
+
+What it IS:
+  - A near-verbatim substring of the original argument.
+  - The anchor point linking metadata tags to specific parts of the text.
+  - Sufficient for educational annotation ("this part of your argument
+    triggered these flags").
+
+What it is NOT:
+  - A precise character-offset span (no {"start": 45, "end": 102}).
+  - Guaranteed to be an exact substring — LLM may compress phrasing.
+
+For UI highlighting:
+  Use fuzzy string matching to locate claim_text within the original
+  argument. Libraries like fuzzywuzzy (Python) or a simple longest-
+  common-substring approach work well. Short common phrases may match
+  in multiple places — disambiguate by sequential order (claims are
+  returned roughly in order of appearance).
+
+
+CURRENT GAP
+-----------
+
+The raw per-claim metadata array is currently a local variable inside
+analyze_argument(). After _metadata_to_context() aggregates it, the
+per-claim detail is discarded.
+
+To enable "show your work" explainability:
+
+  1. Backend: add "claim_metadata": metadata to the return dict in
+     analyze_argument(). One line change.
+
+  2. Database: store the claim_metadata JSON blob in the analyses table.
+     One row per analysis = complete ground truth.
+
+  3. Frontend: render each claim as a highlighted quote with metadata
+     pills underneath. Color-code: red for flags that triggered bias
+     detection, grey for neutral, green for evidence/low speculation.
+
+  4. Optional: add per-claim "triggered_flags" field in
+     _metadata_to_context() — instead of (or in addition to) aggregate
+     flags, record which claims contributed to each flag. This gives
+     precise per-claim → per-bias attribution.
+
+
+PER-CLAIM TO FLAG ATTRIBUTION (not yet implemented)
+-----------------------------------------------------
+
+Currently _metadata_to_context() checks aggregate conditions like:
+  if intent_assumed:
+      flag "check for Empathy Gap / FAE"
+
+To make this per-claim, refactor to:
+  for each claim:
+      if claim.assumes_intent:
+          claim["triggered_flags"].append("Empathy Gap / FAE nudge")
+
+Then the frontend can show:
+  Claim: "they fail to survive because of powerful bad actors..."
+    [assumes intent] [unfalsifiable] [high speculation]
+    → Triggered: Empathy Gap flag, Self-Serving Bias flag
+
+This is the foundation for the expert validation feature: each claim +
+its tags + the resulting bias detection = one reviewable unit where an
+expert can mark "correct", "loose", or "wrong".

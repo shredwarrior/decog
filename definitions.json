@@ -1,0 +1,346 @@
+{
+  "logical_fallacies": {
+    "ad_hominem": {
+      "name": "Ad Hominem",
+      "description": "Attacking the person making the argument rather than the argument itself",
+      "penalty": -15,
+      "improvements": ["Address the argument's claims directly instead of the person behind them", "Replace character attacks with evidence-based counterpoints"]
+    },
+    "strawman": {
+      "name": "Strawman",
+      "description": "Misrepresenting someone's argument to make it easier to attack",
+      "penalty": -20,
+      "improvements": ["Restate the opposing position accurately before critiquing it", "Quote or paraphrase the original claim faithfully"]
+    },
+    "appeal_to_nature": {
+      "name": "Appeal to Nature",
+      "description": "Arguing something is good or right because it is 'natural' (or bad because it is 'unnatural')",
+      "penalty": -10,
+      "improvements": ["Provide empirical evidence for the claim rather than relying on what is 'natural'", "Acknowledge that natural does not automatically mean beneficial"]
+    },
+    "false_dilemma": {
+      "name": "False Dilemma",
+      "description": "Presenting only two options when more exist",
+      "penalty": -12,
+      "improvements": ["Acknowledge additional alternatives or a spectrum of possibilities", "Reframe the argument to consider middle-ground positions"]
+    },
+    "slippery_slope": {
+      "name": "Slippery Slope",
+      "description": "Arguing that one thing will lead to a chain of negative events without evidence",
+      "penalty": -10,
+      "improvements": ["Provide evidence for each step in the causal chain", "Limit the claim to the immediate, demonstrable consequence"]
+    },
+    "begging_the_question": {
+      "name": "Begging the Question (Circular Reasoning)",
+      "description": "Assuming the conclusion in the premises (a claim proves itself)",
+      "penalty": -18,
+      "improvements": ["Support the conclusion with independent premises that don't restate it", "Introduce external evidence or reasoning that stands on its own"]
+    },
+    "appeal_to_authority": {
+      "name": "Appeal to Authority",
+      "description": "Using an authority figure as evidence without proper justification",
+      "penalty": -8,
+      "improvements": ["Cite the actual data or study the authority relies on", "Ensure the authority is a credible expert in the relevant field"]
+    },
+    "appeal_to_ignorance": {
+      "name": "Appeal to Ignorance",
+      "description": "Claiming something is true (or false) because it has not been proven otherwise",
+      "penalty": -12,
+      "improvements": ["Shift from absence of disproof to presenting positive evidence for the claim", "Acknowledge what is currently unknown and propose how it could be tested"]
+    },
+    "hasty_generalization": {
+      "name": "Hasty Generalization",
+      "description": "Drawing a conclusion from insufficient evidence",
+      "penalty": -12,
+      "improvements": ["Provide a larger or more representative sample before generalizing", "Qualify the claim with words like 'some' or 'in certain cases'"]
+    },
+    "post_hoc": {
+      "name": "Post Hoc Ergo Propter Hoc",
+      "description": "Assuming causation from correlation",
+      "penalty": -10,
+      "improvements": ["Present a plausible causal mechanism, not just temporal sequence", "Cite controlled studies or experiments that isolate the causal variable"]
+    },
+    "appeal_to_emotion": {
+      "name": "Appeal to Emotion",
+      "description": "Using emotional manipulation instead of logical reasoning",
+      "penalty": -8,
+      "improvements": ["Replace emotional appeals with factual evidence and logical reasoning", "Separate emotional framing from the core claim so each stands independently"]
+    },
+    "bandwagon": {
+      "name": "Bandwagon (Appeal to Popularity)",
+      "description": "Arguing something is true or good because many people believe it",
+      "penalty": -10,
+      "improvements": ["Provide evidence beyond popularity to support the claim", "Explain why the claim is correct on its own merits, regardless of how many believe it"]
+    },
+    "false_cause": {
+      "name": "False Cause",
+      "description": "Incorrectly identifying the cause of an event or outcome",
+      "penalty": -10,
+      "improvements": ["Identify and rule out alternative explanations for the effect", "Reference studies with proper controls that isolate the proposed cause"]
+    },
+    "red_herring": {
+      "name": "Red Herring",
+      "description": "Introducing irrelevant information to distract from the main argument",
+      "penalty": -12,
+      "improvements": ["Remove tangential points and stay focused on the central claim", "Clearly state the main thesis and ensure every supporting point relates to it"]
+    },
+    "appeal_to_tradition": {
+      "name": "Appeal to Tradition",
+      "description": "Arguing something is right because it has been done that way for a long time",
+      "penalty": -9,
+      "improvements": ["Explain why the tradition is effective based on evidence, not longevity", "Consider whether circumstances have changed since the tradition began"]
+    },
+    "no_true_scotsman": {
+      "name": "No True Scotsman",
+      "description": "Changing the definition to exclude counterexamples to a universal claim",
+      "penalty": -12,
+      "improvements": ["Define terms clearly upfront and stick to those definitions", "Accept counterexamples and narrow the claim rather than redefining it"]
+    },
+    "tu_quoque": {
+      "name": "Tu Quoque",
+      "description": "Dismissing criticism because the critic is allegedly guilty of the same thing",
+      "penalty": -10,
+      "improvements": ["Evaluate the criticism on its own merits regardless of the critic", "Address the substance of the objection with evidence"]
+    }
+  },
+  "cognitive_biases": {
+    "confirmation_bias": {
+      "name": "Confirmation Bias",
+      "description": "Favoring information that confirms existing beliefs",
+      "penalty": -10,
+      "improvements": ["Actively seek out evidence that contradicts the conclusion", "Cite sources from opposing viewpoints and explain why the argument still holds"]
+    },
+    "belief_perseverance": {
+      "name": "Belief Perseverance",
+      "description": "Holding onto beliefs even after the evidence supporting them is discredited",
+      "penalty": -9,
+      "improvements": ["Acknowledge when foundational evidence has been weakened or disproven", "State what new evidence would change the conclusion"]
+    },
+    "anchoring_bias": {
+      "name": "Anchoring Bias",
+      "description": "Relying too heavily on the first piece of information encountered",
+      "penalty": -8,
+      "improvements": ["Consider multiple reference points before drawing a conclusion", "Test the claim against the full range of available data, not just the first data point"]
+    },
+    "availability_heuristic": {
+      "name": "Availability Heuristic",
+      "description": "Overestimating the probability of events with greater availability in memory",
+      "penalty": -7,
+      "improvements": ["Supplement vivid examples with base-rate statistics", "Ask whether the recalled examples are representative of the broader trend"]
+    },
+    "hindsight_bias": {
+      "name": "Hindsight Bias",
+      "description": "Seeing events as predictable after they have already happened",
+      "penalty": -6,
+      "improvements": ["Describe what was actually known before the outcome occurred", "Acknowledge uncertainty and the role of unpredictable factors"]
+    },
+    "ingroup_bias": {
+      "name": "In-group Bias",
+      "description": "Favoring members of one's own group over outsiders",
+      "penalty": -8,
+      "improvements": ["Evaluate the claim using criteria that apply equally to all groups", "Include perspectives and evidence from outside the in-group"]
+    },
+    "dunning_kruger": {
+      "name": "Dunning-Kruger Effect",
+      "description": "Overestimating one's own ability in a particular area",
+      "penalty": -9,
+      "improvements": ["Reference domain experts and peer-reviewed sources rather than personal confidence", "Acknowledge the limits of your own expertise on the topic"]
+    },
+    "fundamental_attribution": {
+      "name": "Fundamental Attribution Error",
+      "description": "Overemphasizing personality-based explanations for behavior",
+      "penalty": -8,
+      "improvements": ["Consider situational or systemic factors that could explain the behavior", "Avoid attributing outcomes solely to character when context is relevant"]
+    },
+    "sunk_cost": {
+      "name": "Sunk Cost Fallacy",
+      "description": "Continuing a behavior because of previously invested resources",
+      "penalty": -10,
+      "improvements": ["Evaluate the claim based on future expected outcomes, not past investment", "Ask whether you would still support the conclusion if starting fresh today"]
+    },
+    "negativity_bias": {
+      "name": "Negativity Bias",
+      "description": "Giving more weight to negative experiences than positive ones",
+      "penalty": -7,
+      "improvements": ["Present both positive and negative evidence in balanced proportion", "Quantify outcomes rather than relying on emotional weight of negatives"]
+    },
+    "self_serving_bias": {
+      "name": "Self-Serving Bias",
+      "description": "Attributing successes to internal factors and failures to external factors",
+      "penalty": -7,
+      "improvements": ["Apply the same causal standard to successes and failures alike", "Consider external factors for successes and internal ones for failures as well"]
+    },
+    "optimism_bias": {
+      "name": "Optimism Bias",
+      "description": "Overestimating the likelihood of positive outcomes and underestimating negatives",
+      "penalty": -6,
+      "improvements": ["Include realistic risk assessment and potential downsides", "Back up optimistic projections with historical base rates"]
+    },
+    "survivorship_bias": {
+      "name": "Survivorship Bias",
+      "description": "Concentrating on successful examples while overlooking failures, leading to false conclusions about what causes success",
+      "penalty": -9,
+      "improvements": ["Include failed cases alongside successful ones for a complete picture", "Ask what the full population looks like, not just the visible survivors"]
+    },
+    "egocentric_bias": {
+      "name": "Egocentric Bias",
+      "description": "Relying too heavily on one's own perspective or recalling events in a self-serving manner",
+      "penalty": -8,
+      "improvements": ["Incorporate third-party perspectives or external data to verify the claim", "Separate personal experience from objective evidence"]
+    },
+    "empathy_gap": {
+      "name": "Empathy Gap",
+      "description": "Underestimating the influence of emotional or physical states on one's own or others' judgments and decisions",
+      "penalty": -7,
+      "improvements": ["Acknowledge how emotional or physical states might color the judgment", "Revisit the argument in a different emotional state to test its robustness"]
+    },
+    "attribute_substitution": {
+      "name": "Attribute Substitution",
+      "description": "Answering a difficult question by unconsciously substituting it with a simpler, related one",
+      "penalty": -8,
+      "improvements": ["Make the actual question explicit and answer it directly with relevant evidence", "Check that the reasoning actually addresses the original claim, not a simpler proxy"]
+    },
+    "maslows_hammer": {
+      "name": "Maslow's Hammer",
+      "description": "Over-relying on a familiar tool, framework, or theory and forcing it onto situations where it does not fit ('if all you have is a hammer, everything looks like a nail')",
+      "penalty": -8,
+      "improvements": ["Consider whether the chosen framework genuinely fits the situation or is being forced", "Try explaining the issue through at least one alternative lens before committing to a single theory"]
+    },
+    "hypercognition": {
+      "name": "Hypercognition",
+      "description": "Possessing too many categories or concepts for a domain, leading to over-classification and seeing distinctions or patterns that are not meaningfully present",
+      "penalty": -7,
+      "improvements": ["Ask whether the fine-grained label adds explanatory value or just jargon", "Simplify the classification and test whether the broader category explains the evidence just as well"]
+    },
+    "russells_teapot": {
+      "name": "Russell's Teapot",
+      "description": "Making an unfalsifiable claim and shifting the burden of proof to others to disprove it, rather than providing evidence for the claim",
+      "penalty": -9,
+      "improvements": ["Provide positive evidence for the claim rather than demanding others disprove it", "Acknowledge the claim is speculative if no supporting evidence exists"]
+    },
+    "symmetry_impulse": {
+      "name": "Symmetry Impulse",
+      "description": "Using symmetry or forced balance to complete judgments — assuming every positive must have an equal negative, every pro must have a con, or both sides of an issue deserve equal weight regardless of evidence asymmetry",
+      "penalty": -8,
+      "improvements": ["Check whether the evidence actually supports equal weight on both sides before presenting a balanced view", "Let the evidence determine the proportions rather than imposing artificial symmetry"]
+    },
+    "proportionality_bias": {
+      "name": "Proportionality Bias (Major Event / Major Cause)",
+      "description": "Assuming that the magnitude of a cause must match the magnitude of its effect — large events must have large causes, and small causes cannot produce large outcomes. This drives conspiracy thinking and dismissal of simple explanations for significant events",
+      "penalty": -8,
+      "improvements": ["Consider that small causes can have large effects through cascading mechanisms (the butterfly effect)", "Evaluate the causal chain on its own merits rather than matching cause size to effect size"]
+    }
+  },
+  "cognitive_distortions": {
+    "all_or_nothing": {
+      "name": "All-or-Nothing Thinking",
+      "description": "Viewing situations in black and white categories",
+      "penalty": -10,
+      "improvements": ["Introduce degrees or a spectrum instead of absolute categories", "Use qualifying language: 'tends to' or 'in most cases' rather than 'always/never'"]
+    },
+    "overgeneralization": {
+      "name": "Overgeneralization",
+      "description": "Seeing a single negative event as a never-ending pattern",
+      "penalty": -9,
+      "improvements": ["Limit the conclusion to the specific case rather than extrapolating universally", "Provide additional data points before claiming a pattern"]
+    },
+    "mental_filter": {
+      "name": "Mental Filter",
+      "description": "Focusing exclusively on negative details while filtering out positive aspects",
+      "penalty": -8,
+      "improvements": ["Include positive or neutral evidence alongside the negative", "Present a balanced view by acknowledging what supports the opposing conclusion"]
+    },
+    "discounting_the_positive": {
+      "name": "Discounting the Positive",
+      "description": "Rejecting positive experiences by insisting they 'don't count'",
+      "penalty": -7,
+      "improvements": ["Explain why positive evidence is being discounted with objective criteria", "Weight positive data the same way as negative data"]
+    },
+    "catastrophizing": {
+      "name": "Catastrophizing",
+      "description": "Expecting the worst possible outcome",
+      "penalty": -10,
+      "improvements": ["Assess the realistic probability of the worst-case scenario with data", "Present a range of likely outcomes, not just the extreme negative"]
+    },
+    "emotional_reasoning": {
+      "name": "Emotional Reasoning",
+      "description": "Believing that negative feelings reflect reality",
+      "penalty": -9,
+      "improvements": ["Separate how you feel about the claim from what the evidence shows", "Ground the argument in observable facts rather than emotional reactions"]
+    },
+    "mind_reading": {
+      "name": "Mind Reading",
+      "description": "Assuming you know what others are thinking without sufficient evidence",
+      "penalty": -8,
+      "improvements": ["Replace assumptions about others' thoughts with their stated positions or actions", "Cite direct quotes, surveys, or behavioral data instead of imputed motives"]
+    },
+    "fortune_telling": {
+      "name": "Fortune Telling",
+      "description": "Predicting negative outcomes as if they are facts",
+      "penalty": -8,
+      "improvements": ["Present predictions as possibilities, not certainties", "Support forecasts with trend data or expert consensus"]
+    },
+    "should_statements": {
+      "name": "Should Statements",
+      "description": "Using 'should' or 'must' statements that set unrealistic expectations",
+      "penalty": -7,
+      "improvements": ["Replace prescriptive 'should' language with descriptive reasoning about trade-offs", "Explain the rationale behind the expectation rather than asserting obligation"]
+    },
+    "magnification_minimization": {
+      "name": "Magnification/Minimization",
+      "description": "Blowing negative things out of proportion or shrinking positives",
+      "penalty": -8,
+      "improvements": ["Assign proportional weight to evidence based on its actual significance", "Use data to calibrate the magnitude of positives and negatives objectively"]
+    },
+    "labeling": {
+      "name": "Labeling",
+      "description": "Attaching negative labels to oneself or others",
+      "penalty": -8,
+      "improvements": ["Describe specific behaviors or evidence instead of attaching labels", "Avoid reductive characterizations and focus on what can be observed"]
+    },
+    "personalization": {
+      "name": "Personalization",
+      "description": "Assuming responsibility for events outside your control",
+      "penalty": -7,
+      "improvements": ["Identify all contributing factors rather than assigning sole responsibility", "Distinguish between correlation with a person and actual causal responsibility"]
+    }
+  },
+  "philosophical_razors": {
+    "occams_razor": {
+      "name": "Occam's Razor",
+      "description": "The simplest explanation is usually the correct one",
+      "reward": 10,
+      "improvement": "Simplify the argument by removing unnecessary assumptions and entities"
+    },
+    "hanlons_razor": {
+      "name": "Hanlon's Razor",
+      "description": "Do not attribute to malice what can be adequately explained by mistake or ignorance",
+      "reward": 2,
+      "improvement": "Consider non-malicious explanations before attributing intent"
+    },
+    "hitchens_razor": {
+      "name": "Hitchens's Razor",
+      "description": "What can be asserted without evidence can be dismissed without evidence",
+      "reward": 9,
+      "improvement": "Back every key assertion with at least one piece of concrete evidence"
+    },
+    "sagan_standard": {
+      "name": "Sagan Standard",
+      "description": "Extraordinary claims require extraordinary evidence",
+      "reward": 8,
+      "improvement": "Match the strength of your evidence to the scale of your claim"
+    },
+    "newtons_flaming_laser_sword": {
+      "name": "Newton's Flaming Laser Sword",
+      "description": "If something cannot be settled by experiment or observation, it is not worth debating",
+      "reward": 7,
+      "improvement": "Propose a concrete way to test or observe the claim"
+    },
+    "poppers_falsifiability": {
+      "name": "Popper's Falsifiability",
+      "description": "A claim should be testable and potentially falsifiable to be meaningful as an empirical claim",
+      "reward": 8,
+      "improvement": "State explicitly what evidence would disprove the claim"
+    }
+  }
+}
