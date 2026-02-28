@@ -11,7 +11,7 @@ load_dotenv()
 class ArgumentAnalyzer:
     def __init__(self):
         """Initialize the analyzer with definitions and OpenAI client"""
-        self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"),timeout=60.0,max_retries=2,)
         self.definitions = self._load_definitions()
         # How many to show on the main cards (top-N); scoring uses ALL detected
         self.display_fallacies = 3
