@@ -724,7 +724,7 @@ Only include items that clearly apply. Keep lists short (max 2-3 each). Use snak
         try:
             self._last_usage = {}
             word_count = len((argument_text or "").strip().split())
-            if word_count <= 5:
+            if word_count <= 2:
                 return {
                     "success": True,
                     "raw_analysis": "{}",
