@@ -19,10 +19,19 @@
     <meta name="twitter:title" content="de-cognition: find errors in opinions">
     <meta name="twitter:description" content="de-cognition: argument analyser">
     <meta name="twitter:image" content="{{ url_for('static', filename='logo.png', _external=True) }}">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-H1TT4NT3E0"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-H1TT4NT3E0');
+    </script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3543566244103973"
+         crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 </head>
-<body data-max-words="{{ max_words }}" data-subscribed="{{ 'true' if is_subscribed else 'false' }}">
+<body data-max-words="{{ max_words }}" data-subscribed="{{ 'true' if is_subscribed else 'false' }}" data-attempt-limit="{{ attempt_limit }}" data-remaining-attempts="{{ remaining_attempts }}" data-unlimited-attempts="{{ 'true' if unlimited_attempts else 'false' }}" data-window-reset-seconds="{{ window_reset_in_seconds }}">
     <div class="container">
 
         <!-- Logo bar + CTA links -->
@@ -53,20 +62,26 @@
                     rows="6"
                 ></textarea>
                 <div class="input-footer">
-                    <div id="word-counter" class="word-counter">0 / 300 words</div>
+                    <div id="word-counter" class="word-counter">0 / 350 words</div>
                     <div class="hint">Tip: keep it clear and evidence-based. Ctrl+Enter submits.</div>
                 </div>
+                <div class="hint" id="attempt-counter"></div>
                 <div class="input-actions">
                     <button id="analyze-btn" onclick="analyzeArgument()">Analyze Argument</button>
+                    <label class="improvements-prefetch-control">
+                        <input type="checkbox" id="prefetch-improvements-checkbox" checked>
+                        Show improvements for this input
+                    </label>
                     <div id="inline-subscribe" class="inline-subscribe">
                         <form class="inline-subscribe-form" onsubmit="handleSubscribe(event)">
-                            <input type="email" id="subscribe-email-inline" placeholder="your@email.com" required>
+                            <input type="email" id="subscribe-email-inline" placeholder="your@email.com">
+                            <input type="password" id="subscribe-key-inline" placeholder="access key (optional)">
                             <button type="submit" class="inline-subscribe-btn">Subscribe</button>
                         </form>
-                        <div class="inline-subscribe-label">Subscribe to unlock 2,000-word input</div>
+                        <div class="inline-subscribe-label">Free: 3 analyses/day. Subscribe: 20/day. 350-word max.</div>
                         <div class="inline-subscribe-legal">By subscribing you accept the <a href="https://cognitiontoday.com/terms-and-conditions/" target="_blank" rel="noopener">T&amp;C</a>, <a href="https://cognitiontoday.com/privacy-policy/" target="_blank" rel="noopener">Privacy Policy</a>, and agree to receive blog updates from Cognition Today via email.</div>
                     </div>
-                    <div id="inline-subscribed-badge" class="inline-subscribed-badge hidden">&#10003; Subscribed &mdash; 2,000-word limit active</div>
+                    <div id="inline-subscribed-badge" class="inline-subscribed-badge hidden">&#10003; Subscribed &mdash; 20 analyses/day, 350-word max</div>
                 </div>
             </div>
 
@@ -186,15 +201,15 @@
                     <!-- LEFT: Fallacies / Biases / Distortions stacked -->
                     <div class="card-soft issues-stack">
                         <div class="issue-category">
-                            <h3>Logical Fallacies <span class="cat-count" id="fallacies-count"></span></h3>
+                            <h3>Logical Fallacies</h3>
                             <div id="fallacies-list" class="issue-list"></div>
                         </div>
                         <div class="issue-category">
-                            <h3>Cognitive Biases <span class="cat-count" id="biases-count"></span></h3>
+                            <h3>Cognitive Biases</h3>
                             <div id="biases-list" class="issue-list"></div>
                         </div>
                         <div class="issue-category">
-                            <h3>Cognitive Distortions <span class="cat-count" id="distortions-count"></span></h3>
+                            <h3>Cognitive Distortions</h3>
                             <div id="distortions-list" class="issue-list"></div>
                         </div>
                     </div>
@@ -208,27 +223,10 @@
                     </div>
                 </div>
 
-                <!-- ROW 3b: View all detected issues (expandable) -->
-                <div class="card-soft all-issues-section hidden" id="all-issues-section">
-                    <button class="toggle-all-btn" id="toggle-all-btn" type="button" data-total="" onclick="toggleAllIssues()">
-                        ▸ View all detected issues
+                <div class="improvements-action-row hidden" id="improvements-action-row">
+                    <button class="improvements-action-btn" id="improvements-action-btn" type="button" onclick="showImprovementsForInput()">
+                        Show improvements for the input
                     </button>
-                    <div id="all-issues-body" class="all-issues-body hidden">
-                        <div class="all-issues-grid">
-                            <div class="all-issues-col">
-                                <h4>All Logical Fallacies</h4>
-                                <div id="all-fallacies-list"></div>
-                            </div>
-                            <div class="all-issues-col">
-                                <h4>All Cognitive Biases</h4>
-                                <div id="all-biases-list"></div>
-                            </div>
-                            <div class="all-issues-col">
-                                <h4>All Cognitive Distortions</h4>
-                                <div id="all-distortions-list"></div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- ROW 3c: Improvement Suggestions -->
@@ -247,28 +245,32 @@
                             <button class="share-option" onclick="shareToTwitter()">Share on X / Twitter</button>
                             <button class="share-option" onclick="shareToLinkedIn()">Share on LinkedIn</button>
                             <button class="share-option" onclick="shareToFacebook()">Share on Facebook</button>
-                            <button class="share-option" onclick="shareDownloadImage()">Save as image</button>
                             <button class="share-option" onclick="shareLink()">Copy share link</button>
                         </div>
                     </div>
                     <div class="engagement-col subscribe-col">
                         <div id="subscribe-form-wrap">
                             <div class="subscribe-brand">Subscribe to Cognition Today</div>
-                            <div class="subscribe-sub">Unlock 2,000-word analysis</div>
+                            <div class="subscribe-sub">Unlock 20 analyses/day (350-word max input)</div>
                             <form class="subscribe-form" onsubmit="handleSubscribe(event)">
-                                <input type="email" id="subscribe-email" placeholder="your@email.com" required>
+                                <input type="email" id="subscribe-email" placeholder="your@email.com">
+                                <input type="password" id="subscribe-key" placeholder="access key">
                                 <button type="submit" class="subscribe-btn">Subscribe</button>
                             </form>
                         </div>
                         <div id="subscribed-badge" class="subscribed-badge hidden">
-                            &#10003; Subscribed &mdash; 2,000-word limit active
+                            &#10003; Subscribed &mdash; 20 analyses/day, 350-word max
                         </div>
                     </div>
                 </div>
 
                 <!-- Ad slot: bottom of results -->
                 <div class="ad-slot" id="ad-slot-bottom">
-                    <!-- Ad placeholder -->
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-3543566244103973"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
                 </div>
             </div>
 
@@ -333,9 +335,17 @@
     </div>
 
     <script>
-        let MAX_WORDS = parseInt(document.body.dataset.maxWords) || 300;
+        let MAX_WORDS = parseInt(document.body.dataset.maxWords) || 350;
         let isSubscribed = document.body.dataset.subscribed === 'true';
+        let attemptLimit = parseInt(document.body.dataset.attemptLimit) || (isSubscribed ? 20 : 3);
+        let remainingAttempts = parseInt(document.body.dataset.remainingAttempts) || attemptLimit;
+        let unlimitedAttempts = document.body.dataset.unlimitedAttempts === 'true';
+        let windowResetInSeconds = parseInt(document.body.dataset.windowResetSeconds) || 0;
         let currentAnalysisId = null;
+        let isAnalyzing = false;
+        let currentImprovementsCache = [];
+        let improvementsReady = false;
+        let improvementsPrefetchEnabled = false;
 
         if (isSubscribed) {
             document.getElementById('inline-subscribe').classList.add('hidden');
@@ -345,6 +355,8 @@
             const oldBadge = document.getElementById('subscribed-badge');
             if (oldBadge) oldBadge.classList.remove('hidden');
         }
+        updateAttemptCounter();
+        initImprovementsCheckboxBehavior();
 
 
         /* ── Progress bar simulation ─────────────────── */
@@ -511,10 +523,16 @@
 
         /* ── Main analyze function ───────────────────── */
         async function analyzeArgument() {
+            if (isAnalyzing) return;
             const argumentText = document.getElementById('argument-input').value.trim();
             
             if (!argumentText) {
                 alert('Please enter an argument to analyze.');
+                return;
+            }
+
+            if (!unlimitedAttempts && remainingAttempts <= 0) {
+                showError('Daily analysis limit reached for this browser. Subscribe for 20/day or try again tomorrow.');
                 return;
             }
 
@@ -523,6 +541,15 @@
                 showError(`Too long: ${wc} words. Please keep it under ${MAX_WORDS} words.`);
                 return;
             }
+
+            isAnalyzing = true;
+            const analyzeBtn = document.getElementById('analyze-btn');
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Analyzing...';
+
+            improvementsPrefetchEnabled = !!document.getElementById('prefetch-improvements-checkbox')?.checked;
+            currentImprovementsCache = [];
+            improvementsReady = false;
 
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('results').classList.add('hidden');
@@ -538,21 +565,32 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ argument: argumentText })
+                    body: JSON.stringify({
+                        argument: argumentText,
+                        request_improvements: improvementsPrefetchEnabled
+                    }),
+                    cache: 'no-store'
                 });
 
                 const data = await response.json();
+                updateAttemptStateFromResponse(data);
 
                 stopProgress();
 
                 if (data.success) {
                     displayResults(data);
                 } else {
+                    document.getElementById('loading').classList.add('hidden');
                     showError(data.error || 'An error occurred during analysis.');
                 }
             } catch (error) {
                 stopProgress();
+                document.getElementById('loading').classList.add('hidden');
                 showError('Failed to connect to the server. Please try again.');
+            } finally {
+                isAnalyzing = false;
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Analyze Argument';
             }
         }
 
@@ -579,56 +617,40 @@
             document.getElementById('logic-value').textContent = Math.round(logicScore);
             updateScoreCircle('circle-logic', logicScore);
 
-            // Status label & message from backend analytics
+            // Status label & 27-term interpretation from backend
             if (data.score_breakdown) {
-                document.getElementById('score-status-label').textContent = data.score_breakdown.status_label || '';
-                document.getElementById('score-status-text').textContent = data.score_breakdown.status_message || '';
+                const bd = data.score_breakdown;
+                document.getElementById('score-status-label').textContent = bd.status_label || '';
+                const interp27 = bd.interpretation_27 || bd.status_message || '';
+                const bands = bd.dimension_bands;
+                let statusHtml = interp27;
+                if (bands) {
+                    statusHtml = `<strong>Bias: ${bands.bias || '-'} | Testability: ${bands.testability || '-'} | Logic: ${bands.logic || '-'}</strong><br><br>${interp27}`;
+                }
+                document.getElementById('score-status-text').innerHTML = statusHtml;
             } else {
                 document.getElementById('score-status-label').textContent = '';
                 document.getElementById('score-status-text').textContent = '';
             }
 
-            // Logic snapshot chips (directly from metadata/logic variables)
+            // Logic Analysis: logic-related hints only (claim_specificity, evidence_strength, etc.)
             const chipsEl = document.getElementById('logic-snapshot-chips');
-            const lv = (breakdown && breakdown.logic_variables) ? breakdown.logic_variables : {};
-            const metadata = Array.isArray(data.metadata) ? data.metadata : [];
-            const claimCount = metadata.length;
-            const assumptionCount = Number(lv.assumption_count || 0);
-            const ifThenCount = Number(lv.if_then_count || 0);
-            const contradictionSignals = Number(lv.contradiction_signals || 0);
-            const contradictionIndex = Math.round(Number(lv.contradiction_index || 0));
-            const overclaimPenalty = Math.round(Number(lv.overclaim_penalty || 0));
-            const boundaryClarity = Math.round(Number(lv.assumption_boundary_clarity || 0));
-
-            const consistencyBand = contradictionIndex >= 65
-                ? 'inconsistent'
-                : (contradictionIndex >= 35 ? 'partly consistent' : 'consistent');
-            const certaintyBand = overclaimPenalty >= 70
-                ? 'claim certainty is overstated'
-                : (overclaimPenalty >= 40 ? 'claim certainty may be stretched' : 'claim certainty is calibrated');
-            const ifThenBand = ifThenCount >= 2
-                ? 'good if/then structure'
-                : (ifThenCount === 1 ? 'some if/then structure' : 'little if/then structure');
-            const boundaryBand = boundaryClarity >= 70
-                ? 'high assumption clarity'
-                : (boundaryClarity >= 40 ? 'medium assumption clarity' : 'low assumption clarity');
-
-            const chipValues = [
-                `Claims analyzed: ${claimCount}`,
-                `Assumptions made explicit: ${assumptionCount}`,
-                `If/then links: ${ifThenCount} - ${ifThenBand}`,
-                `Contradictions flagged: ${contradictionSignals}`,
-                `Internal consistency: ${consistencyBand}`,
-                `Certainty vs evidence: ${certaintyBand}`,
-                `Assumption clarity: ${boundaryClarity}% - ${boundaryBand}`
-            ];
+            const hintVec = data.hint_vector_012 || {};
+            const logicKeys = data.logic_hint_keys || [];
+            const hintKeys = logicKeys.length ? logicKeys.filter(k => k in hintVec) : [];
             chipsEl.innerHTML = '';
-            chipValues.forEach(txt => {
-                const chip = document.createElement('div');
-                chip.className = 'logic-chip';
-                chip.textContent = txt;
-                chipsEl.appendChild(chip);
-            });
+            if (hintKeys.length === 0) {
+                chipsEl.innerHTML = '<p class="no-issues">Logic hint analysis not available.</p>';
+            } else {
+                const hintLabels = data.hint_labels || {};
+                hintKeys.forEach(k => {
+                    const label = hintLabels[k] || '';
+                    const chip = document.createElement('div');
+                    chip.className = 'logic-chip';
+                    chip.textContent = `${k.replace(/_/g, ' ')}: ${label}`;
+                    chipsEl.appendChild(chip);
+                });
+            }
 
             // Executive summary
             const execSentence = data.detected_issues.executive_summary_sentence || '';
@@ -649,73 +671,53 @@
 
             displayIssueObjects('fallacies-list', allFallacies.slice(0, 3), 'penalty');
             displayIssueObjects('biases-list', allBiases.slice(0, 3), 'penalty');
-            displayIssueObjects('distortions-list', allDistortions.slice(0, 2), 'penalty');
+            displayIssueObjects('distortions-list', allDistortions.slice(0, 3), 'penalty');
             displayRazorObjects('razors-list', data.detected_issues.philosophical_razors);
 
-            // Update category counts
-            document.getElementById('fallacies-count').textContent = allFallacies.length ? `(${allFallacies.length} detected)` : '';
-            document.getElementById('biases-count').textContent = allBiases.length ? `(${allBiases.length} detected)` : '';
-            document.getElementById('distortions-count').textContent = allDistortions.length ? `(${allDistortions.length} detected)` : '';
-
-            // Show "View all" section when there are detected issues
-            const totalIssues = allFallacies.length + allBiases.length + allDistortions.length;
-            const allSection = document.getElementById('all-issues-section');
-            const toggleBtn = document.getElementById('toggle-all-btn');
-            if (totalIssues > 0) {
-                allSection.classList.remove('hidden');
-                // Cap each list at 20 total across all categories
-                const CAP = 20;
-                let remaining = CAP;
-                const capF = allFallacies.slice(0, remaining); remaining -= capF.length;
-                const capB = allBiases.slice(0, remaining);    remaining -= capB.length;
-                const capD = allDistortions.slice(0, remaining);
-                displayIssueObjects('all-fallacies-list', capF, 'penalty');
-                displayIssueObjects('all-biases-list', capB, 'penalty');
-                displayIssueObjects('all-distortions-list', capD, 'penalty');
-                // Store total in data attribute and reset expand state
-                toggleBtn.dataset.total = `(${totalIssues} total)`;
-                toggleBtn.textContent = `▸ View all detected issues (${totalIssues} total)`;
-                document.getElementById('all-issues-body').classList.add('hidden');
-            } else {
-                allSection.classList.add('hidden');
-            }
-
-            // Display argument quote (truncated to 300 words)
+            // Display argument quote (truncated to 350 words)
             const argText = document.getElementById('argument-input').value.trim();
             const words = argText.split(/\s+/);
-            const truncated = words.length > 300 ? words.slice(0, 300).join(' ') + '...' : argText;
+            const truncated = words.length > 350 ? words.slice(0, 350).join(' ') + '...' : argText;
             document.getElementById('argument-quote-text').textContent = truncated;
 
-            // Display improvement suggestions
+            // Display improvement suggestions only when user asks to show them
             const improvSection = document.getElementById('improvements-section');
             const improvList = document.getElementById('improvements-list');
+            const improvActionRow = document.getElementById('improvements-action-row');
+            const improvActionBtn = document.getElementById('improvements-action-btn');
             improvList.innerHTML = '';
-            const existingStatus = document.getElementById('improvements-status');
-            if (existingStatus) existingStatus.remove();
+            improvSection.classList.add('hidden');
+
             const improvements = data.improvements || [];
             if (improvements.length > 0) {
-                improvSection.classList.remove('hidden');
-                improvements.forEach(s => {
-                    const li = document.createElement('li');
-                    li.textContent = s;
-                    improvList.appendChild(li);
-                });
+                currentImprovementsCache = improvements.slice();
+                improvementsReady = true;
             } else {
-                improvSection.classList.add('hidden');
+                currentImprovementsCache = [];
+                improvementsReady = false;
             }
 
             currentAnalysisId = data.analysis_id || null;
-            if (data.improvements_pending && currentAnalysisId) {
-                improvSection.classList.remove('hidden');
-                const status = document.createElement('p');
-                status.id = 'improvements-status';
-                status.className = 'improvements-status';
-                status.textContent = 'Generating improvements...';
-                improvSection.appendChild(status);
-                fetchDeferredImprovements(currentAnalysisId);
+            if (improvementsPrefetchEnabled && currentAnalysisId) {
+                improvActionRow.classList.remove('hidden');
+                if (improvementsReady) {
+                    improvActionBtn.disabled = false;
+                    improvActionBtn.textContent = 'Show improvements for the input';
+                } else {
+                    improvActionBtn.disabled = true;
+                    improvActionBtn.textContent = 'Preparing improvements...';
+                }
+                if (data.improvements_pending) {
+                    fetchDeferredImprovements(currentAnalysisId, 0, { silent: true });
+                }
+            } else {
+                improvActionRow.classList.add('hidden');
+                improvActionBtn.disabled = false;
+                improvActionBtn.textContent = 'Show improvements for the input';
             }
 
-            // Show results with smooth entrance (loading section stays visible above)
+            // Hide loading and show results with smooth entrance
+            document.getElementById('loading').classList.add('hidden');
             const resultsEl = document.getElementById('results');
             resultsEl.classList.remove('hidden');
             requestAnimationFrame(() => {
@@ -724,49 +726,91 @@
             });
         }
 
-        async function fetchDeferredImprovements(analysisId, attempts = 0) {
+        async function fetchDeferredImprovements(analysisId, attempts = 0, options = {}) {
             const maxAttempts = 15;
+            const silent = !!options.silent;
             try {
                 const resp = await fetch(`/api/analysis/${analysisId}/improvements`);
                 const data = await resp.json();
-                const improvSection = document.getElementById('improvements-section');
-                const improvList = document.getElementById('improvements-list');
-                let status = document.getElementById('improvements-status');
+                const actionBtn = document.getElementById('improvements-action-btn');
 
                 if (data.success && data.status === 'done' && Array.isArray(data.improvements) && data.improvements.length) {
-                    improvList.innerHTML = '';
-                    data.improvements.forEach(s => {
-                        const li = document.createElement('li');
-                        li.textContent = s;
-                        improvList.appendChild(li);
-                    });
-                    if (status) status.remove();
+                    currentImprovementsCache = data.improvements.slice();
+                    improvementsReady = true;
+                    actionBtn.disabled = false;
+                    actionBtn.textContent = 'Show improvements for the input';
+                    if (!silent) renderImprovementsFromCache();
                     return;
                 }
 
-                if (!status) {
-                    status = document.createElement('p');
-                    status.id = 'improvements-status';
-                    status.className = 'improvements-status';
-                    improvSection.appendChild(status);
+                if (data.status === 'disabled') {
+                    actionBtn.disabled = true;
+                    actionBtn.textContent = 'Improvements were not requested for this input';
+                    return;
                 }
 
                 if (data.status === 'failed') {
-                    status.textContent = 'Improvements unavailable right now. Please retry analysis.';
+                    actionBtn.disabled = false;
+                    actionBtn.textContent = 'Improvements unavailable. Click to retry fetch';
                     return;
                 }
 
                 if (attempts >= maxAttempts) {
-                    status.textContent = 'Improvements are taking longer than expected.';
+                    actionBtn.disabled = false;
+                    actionBtn.textContent = 'Still processing. Click to retry fetch';
                     return;
                 }
 
-                status.textContent = 'Generating improvements...';
-                setTimeout(() => fetchDeferredImprovements(analysisId, attempts + 1), 3000);
+                actionBtn.disabled = true;
+                actionBtn.textContent = 'Preparing improvements...';
+                setTimeout(() => fetchDeferredImprovements(analysisId, attempts + 1, options), 3000);
             } catch {
-                const status = document.getElementById('improvements-status');
-                if (status) status.textContent = 'Could not load improvements.';
+                const actionBtn = document.getElementById('improvements-action-btn');
+                actionBtn.disabled = false;
+                actionBtn.textContent = 'Could not load improvements. Click to retry';
             }
+        }
+
+        function showImprovementsForInput() {
+            const actionBtn = document.getElementById('improvements-action-btn');
+            if (!currentAnalysisId) return;
+            if (improvementsReady && currentImprovementsCache.length) {
+                renderImprovementsFromCache();
+                return;
+            }
+            actionBtn.disabled = true;
+            actionBtn.textContent = 'Fetching improvements...';
+            fetchDeferredImprovements(currentAnalysisId, 0, { silent: false });
+        }
+
+        function initImprovementsCheckboxBehavior() {
+            const checkbox = document.getElementById('prefetch-improvements-checkbox');
+            if (!checkbox) return;
+            checkbox.addEventListener('change', () => {
+                const improvActionRow = document.getElementById('improvements-action-row');
+                const improvSection = document.getElementById('improvements-section');
+                if (!checkbox.checked) {
+                    improvActionRow.classList.add('hidden');
+                    improvSection.classList.add('hidden');
+                    return;
+                }
+                if (currentAnalysisId) {
+                    improvActionRow.classList.remove('hidden');
+                }
+            });
+        }
+
+        function renderImprovementsFromCache() {
+            const improvSection = document.getElementById('improvements-section');
+            const improvList = document.getElementById('improvements-list');
+            improvList.innerHTML = '';
+            currentImprovementsCache.forEach((s) => {
+                const li = document.createElement('li');
+                li.textContent = s;
+                improvList.appendChild(li);
+            });
+            improvSection.classList.remove('hidden');
+            improvSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function displayIssueObjects(elementId, issues, valueField) {
@@ -874,65 +918,6 @@
             }
         });
 
-        function _captureSnapshot() {
-            const wrapper = document.createElement('div');
-            wrapper.style.cssText = 'background:#fff;padding:24px 28px;border-radius:16px;display:inline-block;max-width:600px;font-family:Segoe UI,Tahoma,sans-serif;';
-
-            // Brand header
-            const brand = document.createElement('div');
-            brand.style.cssText = 'text-align:center;font-weight:900;font-size:14px;color:#111;margin-bottom:16px;';
-            brand.innerHTML = 'de-cognition: argument analyser';
-            wrapper.appendChild(brand);
-
-            // Clone scores row
-            const scoresClone = document.querySelector('.scores-row').cloneNode(true);
-            scoresClone.style.marginBottom = '12px';
-            wrapper.appendChild(scoresClone);
-
-            // Clone interpretation row
-            const interpClone = document.querySelector('.interp-row').cloneNode(true);
-            interpClone.style.marginBottom = '12px';
-            wrapper.appendChild(interpClone);
-
-            // Add argument quote (truncated to 300 words)
-            const argText = document.getElementById('argument-quote-text')?.textContent || '';
-            if (argText) {
-                const quoteDiv = document.createElement('div');
-                quoteDiv.style.cssText = 'background:#f7f8fb;border:1px solid #e0e0e0;border-radius:10px;padding:12px 14px;font-size:12px;color:#444;line-height:1.45;';
-                const label = document.createElement('div');
-                label.style.cssText = 'font-weight:700;font-size:11px;color:#111;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;';
-                label.textContent = 'Argument analysed';
-                quoteDiv.appendChild(label);
-                const text = document.createElement('div');
-                text.textContent = argText;
-                quoteDiv.appendChild(text);
-                wrapper.appendChild(quoteDiv);
-            }
-
-            // Footer
-            const footer = document.createElement('div');
-            footer.style.cssText = 'text-align:center;font-size:10px;color:#999;margin-top:14px;';
-            footer.textContent = 'cognitiontoday.com';
-            wrapper.appendChild(footer);
-
-            document.body.appendChild(wrapper);
-            return html2canvas(wrapper, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
-                document.body.removeChild(wrapper);
-                return canvas;
-            });
-        }
-
-        function shareDownloadImage() {
-            if (!_requireAnalysis()) return;
-            _captureSnapshot().then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'de-cognition-analysis.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-            document.getElementById('share-menu').classList.add('hidden');
-        }
-
         function _getShareUrl() {
             if (!currentAnalysisId) return null;
             return `${window.location.origin}/analysis/${currentAnalysisId}`;
@@ -941,7 +926,7 @@
         function _getShareText() {
             const label = document.getElementById('score-status-label')?.textContent || '';
             const score = document.getElementById('score-value')?.textContent || '';
-            if (label) return `de-cognition: find errors in opinions — ${label} (${score}/100)`;
+            if (label && score) return `de-cognition: find errors in opinions — ${label} (${score}/100)`;
             return 'de-cognition: find errors in opinions';
         }
 
@@ -992,27 +977,41 @@
             e.preventDefault();
             const inlineInput = document.getElementById('subscribe-email-inline');
             const legacyInput = document.getElementById('subscribe-email');
+            const inlineKey = document.getElementById('subscribe-key-inline');
+            const legacyKey = document.getElementById('subscribe-key');
             const email = (inlineInput ? inlineInput.value.trim() : '') ||
                           (legacyInput ? legacyInput.value.trim() : '');
-            if (!email) return;
+            const accessKey = (inlineKey ? inlineKey.value.trim() : '') ||
+                              (legacyKey ? legacyKey.value.trim() : '');
+            if (!email && !accessKey) return;
 
             try {
                 const res = await fetch('/api/subscribe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ email, access_key: accessKey })
                 });
                 const data = await res.json();
                 if (data.success) {
                     isSubscribed = true;
-                    MAX_WORDS = data.max_words || 2000;
+                    MAX_WORDS = data.max_words || 350;
+                    attemptLimit = data.attempt_limit || 20;
+                    unlimitedAttempts = !!data.unlimited_attempts;
+                    if (typeof data.remaining_attempts === 'number') {
+                        remainingAttempts = data.remaining_attempts;
+                    }
                     document.getElementById('inline-subscribe').classList.add('hidden');
                     document.getElementById('inline-subscribed-badge').classList.remove('hidden');
                     const oldWrap = document.getElementById('subscribe-form-wrap');
                     if (oldWrap) oldWrap.classList.add('hidden');
                     const oldBadge = document.getElementById('subscribed-badge');
                     if (oldBadge) oldBadge.classList.remove('hidden');
+                    if (unlimitedAttempts) {
+                        document.getElementById('inline-subscribed-badge').innerHTML = '&#10003; Testing mode &mdash; unlimited analyses, 350-word max';
+                        if (oldBadge) oldBadge.innerHTML = '&#10003; Testing mode &mdash; unlimited analyses, 350-word max';
+                    }
                     updateWordCounter();
+                    updateAttemptCounter();
                 } else {
                     alert(data.error || 'Subscription failed.');
                 }
@@ -1070,6 +1069,45 @@
             el.classList.toggle('over', wc > MAX_WORDS);
         }
 
+        function updateAttemptStateFromResponse(data) {
+            if (typeof data.attempt_limit === 'number') {
+                attemptLimit = data.attempt_limit;
+            }
+            if (typeof data.remaining_attempts === 'number') {
+                remainingAttempts = data.remaining_attempts;
+            }
+            if (typeof data.unlimited_attempts === 'boolean') {
+                unlimitedAttempts = data.unlimited_attempts;
+            }
+            if (typeof data.window_reset_in_seconds === 'number') {
+                windowResetInSeconds = data.window_reset_in_seconds;
+            }
+            if (typeof data.max_words === 'number') {
+                MAX_WORDS = data.max_words;
+            }
+            updateAttemptCounter();
+            updateWordCounter();
+        }
+
+        function updateAttemptCounter() {
+            const el = document.getElementById('attempt-counter');
+            if (!el) return;
+            const tier = isSubscribed ? 'Subscribed' : 'Free';
+            if (unlimitedAttempts) {
+                el.textContent = `${tier} quota: Unlimited analyses active (testing key), 350-word max.`;
+                return;
+            }
+            el.textContent = `${tier} quota: ${remainingAttempts}/${attemptLimit} analyses remaining. Reset in ${formatCountdown(windowResetInSeconds)}.`;
+        }
+
+        function formatCountdown(seconds) {
+            const safeSeconds = Math.max(0, Number(seconds || 0));
+            const hrs = Math.floor(safeSeconds / 3600);
+            const mins = Math.floor((safeSeconds % 3600) / 60);
+            const secs = safeSeconds % 60;
+            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
         function computeTop2Issues(detected) {
             const all = []
                 .concat(detected.logical_fallacies || [])
@@ -1097,16 +1135,6 @@
             return out;
         }
 
-        function toggleAllIssues() {
-            const body = document.getElementById('all-issues-body');
-            const btn = document.getElementById('toggle-all-btn');
-            const total = btn.dataset.total || '';
-            const isHidden = body.classList.toggle('hidden');
-            btn.textContent = isHidden
-                ? `▸ View all detected issues ${total}`
-                : `▾ Hide full list ${total}`;
-        }
-
         function openInfoModal() {
             document.getElementById('info-modal').classList.remove('hidden');
         }
@@ -1124,6 +1152,14 @@
 
         document.getElementById('argument-input').addEventListener('input', updateWordCounter);
         updateWordCounter();
+        setInterval(() => {
+            if (unlimitedAttempts) return;
+            if (windowResetInSeconds > 0) {
+                windowResetInSeconds -= 1;
+                updateAttemptCounter();
+            }
+        }, 1000);
+        try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
     </script>
 
     <footer class="site-footer">

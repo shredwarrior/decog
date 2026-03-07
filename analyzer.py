@@ -2,6 +2,7 @@ import json
 import os
 import re
 import math
+from pathlib import Path
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -11,12 +12,37 @@ load_dotenv()
 class ArgumentAnalyzer:
     def __init__(self):
         """Initialize the analyzer with definitions and OpenAI client"""
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"),timeout=60.0,max_retries=2,)
+        timeout_seconds = float(os.getenv("OPENAI_TIMEOUT_SECONDS", "90"))
+        max_retries = int(os.getenv("OPENAI_MAX_RETRIES", "2"))
+        self.client = OpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            timeout=max(5.0, timeout_seconds),
+            max_retries=max(0, max_retries),
+        )
         self.definitions = self._load_definitions()
-        # How many to show on the main cards (top-N); scoring uses ALL detected
-        self.display_fallacies = 3
-        self.display_biases = 3
-        self.display_distortions = 2
+        self.hint_weight_overrides, self.hint_threshold_overrides = self._load_hint_overrides()
+        self._definition_profiles = None
+        self._hint_keys = None
+        # Extraction mode switches
+        self.use_llm_metadata = os.getenv("USE_LLM_METADATA", "true").strip().lower() in {"1", "true", "yes", "on"}
+        self.use_ml_hints = os.getenv("USE_ML_HINTS", "false").strip().lower() in {"1", "true", "yes", "on"}
+        self.use_semantic_hints = os.getenv("USE_SEMANTIC_HINTS", "false").strip().lower() in {"1", "true", "yes", "on"}
+        self.use_llm_bias_patch = os.getenv("USE_LLM_BIAS_PATCH", "true").strip().lower() in {"1", "true", "yes", "on"}
+        self.model_name = os.getenv("OPENAI_MODEL", "gpt-5-mini")
+        self.llm_bias_model = os.getenv("LLM_BIAS_MODEL", "gpt-4o-mini")
+        self.prompt_cache_key_base = (os.getenv("OPENAI_PROMPT_CACHE_KEY", "") or "").strip()
+        retention = (os.getenv("OPENAI_PROMPT_CACHE_RETENTION", "in_memory") or "").strip().lower()
+        self.prompt_cache_retention = retention if retention in {"in_memory", "24h"} else "in_memory"
+        self.single_call_system_prompt = (
+            "You are a strict hint extractor for argument analysis. "
+            "Return only schema-valid JSON with normalized hint values from 0 to 1. "
+            "Do not output direct fallacy, bias, or distortion labels."
+        )
+        # Display: show up to N per category in summary (all above threshold are stored)
+        self.display_fallacies = int(os.getenv("DISPLAY_ISSUES_MAX", "5"))
+        self.display_biases = int(os.getenv("DISPLAY_ISSUES_MAX", "5"))
+        self.display_distortions = int(os.getenv("DISPLAY_ISSUES_MAX", "5"))
+        self._last_usage = {}
         
     def _load_definitions(self):
         """Load definitions from JSON file"""
@@ -26,175 +52,1038 @@ class ArgumentAnalyzer:
         except FileNotFoundError:
             print("Error: definitions.json not found")
             return {}
-    
-    def analyze_argument(self, argument_text, include_improvements=True):
+
+    def _load_definition_profiles(self):
+        """Load hint_profile_012 for cosine prototype matching."""
+        if self._definition_profiles is not None:
+            return self._definition_profiles
+        path = Path(__file__).resolve().parent / "phase1_artifacts" / "definitions_feature_profile.json"
+        if not path.exists():
+            self._definition_profiles = {}
+            return {}
+        try:
+            with open(path, encoding="utf-8") as f:
+                self._definition_profiles = json.load(f)
+        except Exception:
+            self._definition_profiles = {}
+        return self._definition_profiles
+
+    def _hint_keys_for_profiles(self):
+        if self._hint_keys is not None:
+            return self._hint_keys
+        path = Path(__file__).resolve().parent / "phase1_artifacts" / "hint_keys.json"
+        if path.exists():
+            with open(path, encoding="utf-8") as f:
+                self._hint_keys = json.load(f)
+        else:
+            self._hint_keys = list(self._hint_schema().get("hints", {}).keys()) or []
+        return self._hint_keys
+
+    def _cosine_similarity_hints(self, hint_vec, prof_vec):
+        """Cosine similarity between two 37-dim vectors. Returns 0-1."""
+        if len(hint_vec) != len(prof_vec):
+            return 0.0
+        dot = sum(a * b for a, b in zip(hint_vec, prof_vec))
+        na = math.sqrt(sum(a * a for a in hint_vec))
+        nb = math.sqrt(sum(b * b for b in prof_vec))
+        if na < 1e-9 or nb < 1e-9:
+            return 0.0
+        sim = dot / (na * nb)
+        return self._clamp01((sim + 1.0) / 2.0)  # map [-1,1] to [0,1]
+
+    def _load_hint_overrides(self):
         """
-        Two-stage pipeline:
-          Call 1 (cheap): Extract structural metadata from the argument.
-          Call 2 (main):  Analyze using the metadata as context.
+        Optional runtime overrides for hint weights/thresholds.
+        JSON format:
+        {
+          "hint_weight_overrides": { "<category>": { "<issue_key>": { "<hint_key>": weight } } },
+          "hint_threshold_overrides": { "<category>": 0.5 }
+        }
+        """
+        path = (os.getenv("HINT_WEIGHT_OVERRIDES_FILE", "") or "").strip()
+        if not path:
+            return {}, {}
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+        except Exception:
+            return {}, {}
+
+        weight_overrides = payload.get("hint_weight_overrides", {})
+        threshold_overrides = payload.get("hint_threshold_overrides", {})
+        if not isinstance(weight_overrides, dict):
+            weight_overrides = {}
+        if not isinstance(threshold_overrides, dict):
+            threshold_overrides = {}
+        return weight_overrides, threshold_overrides
+
+    def _cache_key(self, stage):
+        """Build stable prompt-cache key per stage when configured."""
+        if not self.prompt_cache_key_base:
+            return None
+        return f"{self.prompt_cache_key_base}:{stage}"
+
+    def _chat_create(self, stage, **kwargs):
+        """Centralized OpenAI chat call with prompt-caching controls."""
+        cache_key = self._cache_key(stage)
+        if cache_key:
+            kwargs["prompt_cache_key"] = cache_key
+        kwargs["prompt_cache_retention"] = self.prompt_cache_retention
+        response = self.client.chat.completions.create(**kwargs)
+        self._record_usage(stage, response)
+        return response
+
+    def _usage_get(self, obj, key, default=0):
+        if obj is None:
+            return default
+        if isinstance(obj, dict):
+            return obj.get(key, default)
+        return getattr(obj, key, default)
+
+    def _record_usage(self, stage, response):
+        """Store usage + cache-hit metrics per stage."""
+        usage = getattr(response, "usage", None)
+        prompt_tokens = int(self._usage_get(usage, "prompt_tokens", 0) or 0)
+        completion_tokens = int(self._usage_get(usage, "completion_tokens", 0) or 0)
+        details = self._usage_get(usage, "prompt_tokens_details", {})
+        cached_tokens = int(self._usage_get(details, "cached_tokens", 0) or 0)
+        self._last_usage[stage] = {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "cached_tokens": cached_tokens,
+            "cache_hit_ratio": round((cached_tokens / prompt_tokens), 4) if prompt_tokens > 0 else 0.0,
+        }
+
+    def _get_usage_summary(self):
+        stages = dict(self._last_usage)
+        totals = {
+            "prompt_tokens": sum(v.get("prompt_tokens", 0) for v in stages.values()),
+            "completion_tokens": sum(v.get("completion_tokens", 0) for v in stages.values()),
+            "cached_tokens": sum(v.get("cached_tokens", 0) for v in stages.values()),
+        }
+        totals["cache_hit_ratio"] = (
+            round((totals["cached_tokens"] / totals["prompt_tokens"]), 4)
+            if totals["prompt_tokens"] > 0
+            else 0.0
+        )
+        return {"stages": stages, "totals": totals}
+
+    @staticmethod
+    def _clamp01(value):
+        return max(0.0, min(1.0, float(value or 0.0)))
+
+    @staticmethod
+    def _signal_to_unit(value):
+        """
+        Normalize hint signal to 0..1.
+        Accepts 0/1/2 as preferred discrete strength levels.
         """
         try:
-            # CALL 1 — lightweight metadata extraction
-            metadata = self._extract_metadata(argument_text)
-            short_deduction_hint = self._extract_short_deduction_hint(argument_text)
+            v = float(value)
+        except Exception:
+            return 0.0
+        if v <= 0.0:
+            return 0.0
+        if v >= 2.0:
+            return 1.0
+        if v > 1.0:
+            return v / 2.0
+        return v
 
-            # CALL 2 — main analysis, enriched with metadata
-            prompt = self._create_analysis_prompt(argument_text, metadata)
+    def _hint_schema(self):
+        schema = self.definitions.get("hint_schema", {})
+        if isinstance(schema, dict) and isinstance(schema.get("hints"), dict) and schema.get("hints"):
+            return schema
+        # Fallback so hint-based mode remains fully operational
+        # even if definitions.json does not include hint_schema.
+        fallback_keys = [
+            "evidence_strength",
+            "evidence_relevance",
+            "falsifiability",
+            "causal_overreach",
+            "generalization_strength",
+            "personal_attack",
+            "emotional_load",
+            "absolute_language",
+            "intent_attribution",
+            "missing_counterevidence",
+            "popularity_appeal",
+            "authority_dependence",
+            "correlation_causation",
+            "binary_framing",
+            "speculation_level",
+            "unfalsifiable_risk",
+            "symmetry_forcing",
+            "proportionality_assumption",
+            "inferential_gap",
+            "claim_specificity",
+            "counterargument_quality",
+            "scope_qualification",
+            "sample_representativeness",
+            "cherry_picking_risk",
+            "novelty_tradition_appeal",
+            "distraction_risk",
+            "redefinition_defense",
+        ]
+        return {"version": 1, "hints": {k: {"type": "signal_0_2", "label": k.replace("_", " ")} for k in fallback_keys}}
 
-            response = self.client.chat.completions.create(
-                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-                messages=[
-                    {"role": "system", "content": "You are an expert in logic, cognitive psychology, and philosophy. Analyze arguments objectively."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3
+    def _hint_profiles(self):
+        return self.definitions.get("hint_weight_profiles", {})
+
+    def _hint_weights_by_category(self):
+        return self.definitions.get("hint_weights", {})
+
+    def _fallback_hint_weights(self, category, key):
+        """Fallback map used when definitions.json has no explicit hint weights."""
+        token = (key or "").lower()
+        base = {}
+        if "ad_hominem" in token or "label" in token:
+            base.update({"personal_attack": 1.0, "emotional_load": 0.55})
+        if "strawman" in token:
+            base.update({"redefinition_defense": 0.7, "counterargument_quality": -0.6})
+        if "false_dilemma" in token or "all_or_nothing" in token:
+            base.update({"binary_framing": 1.0, "scope_qualification": -0.6})
+        if "slippery_slope" in token:
+            base.update({"causal_overreach": 1.0, "speculation_level": 0.6})
+        if "appeal_to_authority" in token:
+            base.update({"authority_dependence": 1.0, "evidence_strength": -0.5})
+        if "appeal_to_emotion" in token or "emotional_reasoning" in token:
+            base.update({"emotional_load": 1.0, "evidence_strength": -0.55})
+        if "hasty_generalization" in token or "overgeneralization" in token:
+            base.update({"generalization_strength": 1.0, "sample_representativeness": -0.75})
+        if "post_hoc" in token or "false_cause" in token:
+            base.update({"correlation_causation": 1.0, "causal_overreach": 0.55})
+        if "survivorship" in token:
+            base.update({"cherry_picking_risk": 1.0, "sample_representativeness": -0.8})
+        if "symmetry_impulse" in token:
+            base.update({"symmetry_forcing": 1.0})
+        if "proportionality_bias" in token:
+            base.update({"proportionality_assumption": 1.0})
+        if "russells_teapot" in token:
+            base.update({"unfalsifiable_risk": 1.0, "falsifiability": -0.8})
+        if not base:
+            if category == "logical_fallacies":
+                base = {"inferential_gap": 0.55, "evidence_strength": -0.35}
+            elif category == "cognitive_biases":
+                base = {"emotional_load": 0.45, "counterargument_quality": -0.35}
+            else:
+                base = {"absolute_language": 0.45, "scope_qualification": -0.4}
+        return base
+
+    def _resolve_issue_hint_weights(self, category, key):
+        cat = self._hint_weights_by_category().get(category, {})
+        raw = cat.get(key, {})
+        if isinstance(raw, str):
+            base = self._hint_profiles().get(raw, {})
+        elif isinstance(raw, dict) and raw:
+            base = raw
+        else:
+            base = self._fallback_hint_weights(category, key)
+
+        ovr = (((self.hint_weight_overrides or {}).get(category, {}) or {}).get(key, {}) or {})
+        if isinstance(ovr, dict) and ovr:
+            merged = dict(base)
+            for hk, w in ovr.items():
+                try:
+                    merged[hk] = float(w)
+                except Exception:
+                    continue
+            return merged
+        return base
+
+    def _category_threshold(self, category):
+        threshold_env = {
+            "logical_fallacies": "HINT_FALLACY_THRESHOLD",
+            "cognitive_biases": "HINT_BIAS_THRESHOLD",
+            "cognitive_distortions": "HINT_DISTORTION_THRESHOLD",
+        }
+        default_map = {
+            "logical_fallacies": 0.48,
+            "cognitive_biases": 0.48,
+            "cognitive_distortions": 0.48,
+        }
+        ovr = (self.hint_threshold_overrides or {}).get(category, None)
+        if ovr is not None:
+            try:
+                return self._clamp01(float(ovr))
+            except Exception:
+                pass
+        return self._clamp01(float(os.getenv(threshold_env.get(category, ""), str(default_map.get(category, 0.42)))))
+
+    def _score_issue_from_hints(self, weights, hints):
+        if not isinstance(weights, dict) or not weights:
+            return 0.0, []
+        weighted_sum = 0.0
+        abs_sum = 0.0
+        contributions = []
+        for hint_key, weight in weights.items():
+            try:
+                w = float(weight)
+            except Exception:
+                continue
+            v = self._clamp01(hints.get(hint_key, 0.0))
+            weighted_sum += w * v
+            abs_sum += abs(w)
+            contributions.append((hint_key, round(w * v, 4), v, w))
+        if abs_sum <= 0:
+            return 0.0, contributions
+        normalized = weighted_sum / abs_sum
+        return self._clamp01((normalized + 1.0) / 2.0), contributions
+
+    def _reason_from_contributions(self, contributions):
+        """Reason text for UI; hint profile details removed per user request."""
+        return ""
+
+    def _priority_hints(self):
+        """Two highly indicative hints per definition. When both strong, modest confidence boost."""
+        return {
+            ("logical_fallacies", "ad_hominem"): ("personal_attack", "emotional_load"),
+            ("logical_fallacies", "strawman"): ("redefinition_defense", "distraction_risk"),
+            ("logical_fallacies", "false_dilemma"): ("binary_framing", "scope_qualification"),
+            ("logical_fallacies", "hasty_generalization"): ("generalization_strength", "sample_representativeness"),
+            ("cognitive_biases", "confirmation_bias"): ("missing_counterevidence", "cherry_picking_risk"),
+            ("cognitive_distortions", "overgeneralization"): ("generalization_strength", "scope_qualification"),
+        }
+
+    def _rank_category_from_hints(self, hints, category, llm_bonus_keys=None, llm_alpha=0.0, hints_012=None):
+        defs = self.definitions.get(category, {})
+        threshold = self._category_threshold(category)
+        profiles = self._load_definition_profiles()
+        hint_keys = self._hint_keys_for_profiles()
+        profile_blend = self._clamp01(float(os.getenv("PROFILE_BLEND_ALPHA", "0.4")))
+        priority_floor = float(os.getenv("PRIORITY_HINT_FLOOR", "0.25"))
+        priority_boost = float(os.getenv("PRIORITY_HINT_BOOST", "0.06"))
+
+        # Build hint vector (0-1): use hints directly; for profile use 0/0.5/1 from 0/1/2
+        hint_vec = [self._clamp01(hints.get(k, 0.0)) for k in hint_keys]
+
+        ranked = []
+        for key in defs.keys():
+            weights = self._resolve_issue_hint_weights(category, key)
+            confidence, contributions = self._score_issue_from_hints(weights, hints)
+
+            # Blend with cosine similarity to definition profile (prototype anchor)
+            if profiles and key in profiles:
+                prof = profiles[key].get("hint_profile_012", {})
+                prof_vec = [float(prof.get(k, 0)) / 2.0 for k in hint_keys]
+                cosine = self._cosine_similarity_hints(hint_vec, prof_vec)
+                confidence = (1.0 - profile_blend) * confidence + profile_blend * cosine
+
+            # Priority hints: when both strongly present and baseline above floor, modest boost
+            pk = (category, key)
+            if pk in self._priority_hints() and confidence >= priority_floor:
+                h1, h2 = self._priority_hints()[pk]
+                v1 = self._clamp01(hints.get(h1, 0.0))
+                v2 = self._clamp01(hints.get(h2, 0.0))
+                if v1 >= 0.5 and v2 >= 0.5:
+                    confidence = min(1.0, confidence + priority_boost)
+
+            if confidence < threshold:
+                continue
+            ranked.append(
+                {
+                    "key": key,
+                    "reason": self._reason_from_contributions(contributions),
+                    "confidence": round(confidence, 4),
+                }
             )
-            
-            analysis_result = response.choices[0].message.content
-            
-            # Parse the response to extract detected issues
-            detected_issues = self._parse_openai_response(analysis_result)
+        ranked.sort(key=lambda x: x["confidence"], reverse=True)
+        return ranked
 
-            # Enforce fixed output sizes and always include all 6 razors
-            detected_issues = self._normalize_detected_issues(detected_issues)
-            
-            # Calculate score
-            score = self._calculate_score(detected_issues, argument_text, metadata, short_deduction_hint)
+    def _apply_rank_adjustments(self, detected, llm_bonus_keys=None):
+        """
+        Rank-based adjustments (no extra LLM reliance):
+        - Strawman: demote 2 ranks (heuristic: often over-detected by hint similarity)
+        - LLM-detected items: promote 2 ranks (quick LLM judgment)
+        """
+        llm_bonus_keys = llm_bonus_keys or set()
+        RANK_DELTA = 2
 
-            # CALL 3 — improvement suggestions based on detected issues
-            improvements = self._generate_improvements(argument_text, detected_issues) if include_improvements else []
-            
+        def _move_in_list(lst, key_pred, delta):
+            """Move item matching key_pred by delta positions. delta>0 = up, delta<0 = down."""
+            idx = next((i for i, x in enumerate(lst) if key_pred(x.get("key"))), None)
+            if idx is None:
+                return
+            new_idx = max(0, min(len(lst) - 1, idx - delta))  # -delta: up=lower index
+            if new_idx == idx:
+                return
+            item = lst.pop(idx)
+            new_idx = min(new_idx, len(lst))  # after pop, clamp for insert
+            lst.insert(new_idx, item)
+
+        # Strawman: demote 2 ranks in fallacies
+        lf = detected.get("logical_fallacies", [])
+        _move_in_list(lf, lambda k: k == "strawman", -RANK_DELTA)
+
+        # LLM-detected: promote 2 ranks in each category
+        for cat in ("logical_fallacies", "cognitive_biases", "cognitive_distortions"):
+            lst = detected.get(cat, [])
+            for (c, key) in llm_bonus_keys:
+                if c != cat:
+                    continue
+                _move_in_list(lst, lambda k: k == key, RANK_DELTA)
+
+    def _razors_from_hints_formula(self, hints):
+        """
+        Evaluate razors via per-razor hint formulas. Each razor has violation_hints;
+        pass when sum of hint values (0/1/2) <= pass_threshold. Differentiates razors.
+        """
+        cfg_path = Path(__file__).resolve().parent / "phase1_artifacts" / "hint_scoring_config.json"
+        try:
+            with open(cfg_path, encoding="utf-8") as f:
+                cfg = json.load(f)
+        except Exception:
+            cfg = {}
+        formulas = cfg.get("razor_formulas", {})
+
+        def _hint_val(k):
+            v = hints.get(k, 0)
+            if v in ("?", None):
+                return 0.0
+            if isinstance(v, (int, float)):
+                if 0 <= v <= 2 and v == int(v):
+                    return float(v)  # already 0/1/2
+                if 0 <= v <= 1:
+                    return v * 2.0  # map 0-1 to 0-2 for formula
+                return float(max(0, min(2, v)))
+            return 0.0
+
+        out = []
+        for key, defn in self.definitions.get("philosophical_razors", {}).items():
+            rule = formulas.get(key, {})
+            violation_hints = rule.get("violation_hints", [])
+            threshold = float(rule.get("pass_threshold", 3))
+
+            if violation_hints:
+                total = sum(_hint_val(k) for k in violation_hints)
+                passed = total <= threshold
+                conf = 1.0 - (total / (len(violation_hints) * 2))  # 0-1, higher = better
+                conf = max(0.0, min(1.0, conf))
+                reason = "Argument aligns with this razor." if passed else "Argument does not clearly satisfy this razor."
+            else:
+                passed = False
+                conf = 0.0
+                reason = "No formula defined for this razor."
+            out.append({
+                "key": key,
+                "pass": passed,
+                "reason": reason,
+                "confidence": round(conf, 4),
+            })
+        return out
+
+    def _razors_from_hints_cosine(self, hints):
+        """Legacy: cosine similarity. Use _razors_from_hints_formula for differentiated evaluation."""
+        return self._razors_from_hints_formula(hints)
+
+    def _deterministic_razors_from_hints(self, hints):
+        """Use formula-based razor evaluation (differentiates razors by hint rules)."""
+        return self._razors_from_hints_formula(hints)
+
+    def _build_summary_from_detected(self, detected):
+        """Build exec summary from issues above confidence threshold."""
+        lf = detected.get("logical_fallacies", [])
+        cb = detected.get("cognitive_biases", [])
+        cd = detected.get("cognitive_distortions", [])
+
+        def names(items):
+            return [item.get("name", item.get("key", "").replace("_", " ")) for item in items if item.get("key")]
+
+        lf_names = names(lf[:5])
+        cb_names = names(cb[:5])
+        cd_names = names(cd[:5])
+
+        parts = []
+        if lf_names:
+            parts.append(f"Fallacies: {', '.join(lf_names)}")
+        if cb_names:
+            parts.append(f"Biases: {', '.join(cb_names)}")
+        if cd_names:
+            parts.append(f"Distortions: {', '.join(cd_names)}")
+
+        if not parts:
+            sentence = "Few issues detected above confidence threshold. Scoring from structural hints."
+            bullets = [
+                "Issues above the confidence threshold are listed below when detected.",
+                "Razors indicate testability and falsifiability.",
+            ]
+            return sentence, bullets, sentence
+
+        sentence = "Detected above threshold: " + "; ".join(parts) + "."
+        total_lf = len(lf)
+        total_cb = len(cb)
+        total_cd = len(cd)
+        bullets = [f"{total_lf} fallacies, {total_cb} biases, {total_cd} distortions above confidence threshold."]
+        return sentence, bullets, sentence
+
+    def _score_to_band(self, score, thresholds):
+        """Map 0-100 score to low/mid/high band."""
+        if score <= thresholds.get("low", 33):
+            return "low"
+        if score <= thresholds.get("mid", 66):
+            return "mid"
+        return "high"
+
+    def _hint_score_breakdown(self, scores, detected_issues, metadata=None, argument_text=""):
+        """Build score_breakdown for UI from hint-based scores. Includes 27-term interpretation."""
+        strength = scores.get("argument_strength", 0)
+        bias_score = scores.get("bias_score", 0)
+        test_score = scores.get("testability_score", 0)
+        logic_score = scores.get("logic_score", 50)
+
+        if strength >= 70:
+            status_label = "Strong"
+            status_message = "Low bias, good testability, and solid logic integrity."
+        elif strength >= 45:
+            status_label = "Moderate"
+            status_message = "Some bias or logic issues; testability and razors may need improvement."
+        else:
+            status_label = "Weak"
+            status_message = "High bias pressure, low testability, or weak logic integrity."
+
+        interp_path = Path(__file__).resolve().parent / "phase1_artifacts" / "interpretation_27.json"
+        dimension_bands = {}
+        interpretation_27 = status_message
+        if interp_path.exists():
+            with open(interp_path, encoding="utf-8") as f:
+                interp_cfg = json.load(f)
+            th = interp_cfg.get("thresholds", {})
+            dimension_bands["bias"] = self._score_to_band(bias_score, th.get("bias", {}))
+            dimension_bands["testability"] = self._score_to_band(test_score, th.get("testability", {}))
+            dimension_bands["logic"] = self._score_to_band(logic_score, th.get("logic", {}))
+            key = f"{dimension_bands['bias']}_{dimension_bands['testability']}_{dimension_bands['logic']}"
+            interpretation_27 = interp_cfg.get("interpretations", {}).get(key, status_message)
+        metadata = metadata or []
+        txt = (argument_text or "").lower()
+        if_then_count = len(re.findall(r"\b(if|then)\b", txt))
+        assumption_count = sum(
+            1 for c in metadata
+            if "assum" in (c.get("claim_text") or "").lower() or "suppos" in (c.get("claim_text") or "").lower()
+        )
+
+        logic_variables = {
+            "assumption_count": assumption_count,
+            "if_then_count": if_then_count,
+            "logic_break_signals": 0,
+            "coherence_score": logic_score,
+            "overclaim_penalty": max(0, 50 - logic_score),
+            "assumption_boundary_clarity": logic_score,
+            "evidence_grounding_score": logic_score,
+            "evidence_relevance_score": logic_score,
+            "counterargument_balance_score": logic_score,
+            "scope_calibration_score": logic_score,
+            "causal_coherence_score": logic_score,
+            "incoherence_index": max(0, 100 - logic_score),
+        }
+
+        out = {
+            "dimension_scores": {
+                "bias_score": bias_score,
+                "testability_score": test_score,
+                "logic_score": logic_score,
+            },
+            "status_label": status_label,
+            "status_message": status_message,
+            "logic_variables": logic_variables,
+            "source": "hint_based",
+        }
+        if dimension_bands:
+            out["dimension_bands"] = dimension_bands
+        if interpretation_27:
+            out["interpretation_27"] = interpretation_27
+        return out
+
+    def _llm_bias_classifier(self, argument_text):
+        """Lightweight LLM call to classify top-level bias categories and specific biases. Returns empty dict on failure."""
+        if not argument_text or len(argument_text.strip()) < 10:
+            return {}
+        prompt = f"""Given this argument, which bias categories apply? Return JSON only.
+Argument:
+\"\"\"{argument_text[:2000]}\"\"\"
+
+Return format:
+{{"top_categories": ["availability"|"representative"|"anchoring"], "specific_biases": ["overgeneralization"|"hasty_generalization"|"confirmation_bias"|"anchoring_bias"|"availability_heuristic"|"survivorship_bias"]}}
+Only include items that clearly apply. Keep lists short (max 2-3 each). Use snake_case keys."""
+        try:
+            response = self._chat_create(
+                "llm_bias_classifier",
+                model=self.llm_bias_model,
+                messages=[
+                    {"role": "system", "content": "You classify arguments into cognitive bias categories. Return only valid JSON."},
+                    {"role": "user", "content": prompt},
+                ],
+                max_completion_tokens=120,
+            )
+            raw = response.choices[0].message.content
+            data = self._safe_json_loads(raw) if isinstance(raw, str) else {}
+            if not isinstance(data, dict):
+                return {}
+            return {
+                "top_categories": data.get("top_categories") or [],
+                "specific_biases": data.get("specific_biases") or [],
+            }
+        except Exception:
+            return {}
+
+    def _llm_bias_to_definition_keys(self, llm_response):
+        """Map LLM response to (category, key) pairs that receive confidence bonus."""
+        if not llm_response:
+            return set()
+        out = set()
+        cats = [c.lower().replace(" ", "_").strip() for c in (llm_response.get("top_categories") or [])]
+        biases = [b.lower().replace(" ", "_").strip() for b in (llm_response.get("specific_biases") or [])]
+        mapping = {
+            "availability": ("cognitive_biases", "availability_heuristic"),
+            "anchoring": ("cognitive_biases", "anchoring_bias"),
+            "representative": ("cognitive_biases", "survivorship_bias"),
+        }
+        for c in cats:
+            if c in mapping:
+                out.add(mapping[c])
+        bias_map = {
+            "overgeneralization": ("cognitive_distortions", "overgeneralization"),
+            "hasty_generalization": ("logical_fallacies", "hasty_generalization"),
+            "confirmation_bias": ("cognitive_biases", "confirmation_bias"),
+            "anchoring_bias": ("cognitive_biases", "anchoring_bias"),
+            "availability_heuristic": ("cognitive_biases", "availability_heuristic"),
+            "survivorship_bias": ("cognitive_biases", "survivorship_bias"),
+        }
+        for b in biases:
+            if b in bias_map:
+                out.add(bias_map[b])
+        return out
+
+    def _detected_from_hint_vector(self, hint_vector, llm_response=None, hints_for_razors=None):
+        llm_bonus_keys = self._llm_bias_to_definition_keys(llm_response) if llm_response else set()
+        razor_hints = hints_for_razors if hints_for_razors is not None else hint_vector
+        detected = {
+            "logical_fallacies": self._rank_category_from_hints(hint_vector, "logical_fallacies"),
+            "cognitive_biases": self._rank_category_from_hints(hint_vector, "cognitive_biases"),
+            "cognitive_distortions": self._rank_category_from_hints(hint_vector, "cognitive_distortions"),
+            "philosophical_razors": self._razors_from_hints_formula(razor_hints),
+        }
+        self._apply_rank_adjustments(detected, llm_bonus_keys)
+        s, b, m = self._build_summary_from_detected(detected)
+        detected["executive_summary_sentence"] = s
+        detected["executive_summary_bullets"] = b
+        detected["summary"] = m
+        return detected
+
+    def _hint_vector_fast(self, argument_text, metadata=None):
+        """Deterministic, cheap hint vector from metadata + text."""
+        metadata = metadata or self._extract_metadata_fast(argument_text)
+        total = max(1, len(metadata))
+
+        def ratio(pred):
+            return sum(1 for c in metadata if pred(c)) / float(total)
+
+        txt = (argument_text or "").lower()
+        causal_markers = len(re.findall(r"\b(because|therefore|thus|hence|causes|leads to|due to|since)\b", txt))
+        absolute_markers = len(re.findall(r"\b(always|never|everyone|no one|all|none|must|cannot)\b", txt))
+
+        hints = {
+            "evidence_strength": 1.0 - ratio(lambda c: c.get("evidence_sufficiency") in ("weak", "none")),
+            "evidence_relevance": 1.0 - ratio(lambda c: c.get("evidence_relevance") in ("low", "none")),
+            "falsifiability": ratio(lambda c: c.get("is_falsifiable")),
+            "testability": ratio(lambda c: c.get("verifiability") in ("easily", "with_effort")),
+            "causal_overreach": min(1.0, ratio(lambda c: c.get("inferential_gap") == "large") + (0.05 * causal_markers)),
+            "generalization_strength": ratio(lambda c: c.get("generalizes")),
+            "personal_attack": ratio(lambda c: c.get("targets_person")),
+            "emotional_load": ratio(lambda c: c.get("emotional_tone") not in ("neutral", None)),
+            "absolute_language": min(1.0, ratio(lambda c: c.get("uses_absolute_language")) + (0.02 * absolute_markers)),
+            "intent_attribution": ratio(lambda c: c.get("assumes_intent")),
+            "missing_counterevidence": 1.0 - ratio(lambda c: c.get("acknowledges_counterargument")),
+            "popularity_appeal": self._clamp01(0.8 if re.search(r"\b(everyone|most people|popular|widely)\b", txt) else 0.0),
+            "authority_dependence": ratio(lambda c: c.get("cites_authority")),
+            "correlation_causation": self._clamp01(ratio(lambda c: c.get("makes_causal_claim")) * 0.7),
+            "binary_framing": self._clamp01(0.7 if re.search(r"\b(either|only two|no other option)\b", txt) else 0.0),
+            "speculation_level": ratio(lambda c: c.get("speculation_level") in ("moderate", "high")),
+            "unfalsifiable_risk": ratio(lambda c: not c.get("is_falsifiable")),
+            "symmetry_forcing": ratio(lambda c: c.get("forces_balance")),
+            "proportionality_assumption": ratio(lambda c: c.get("proportional_causation")),
+            "inferential_gap": ratio(lambda c: c.get("inferential_gap") == "large"),
+            "claim_specificity": ratio(lambda c: c.get("specificity") == "high"),
+            "counterargument_quality": ratio(lambda c: c.get("acknowledges_counterargument")),
+            "scope_qualification": ratio(lambda c: c.get("scope_qualified")),
+            "sample_representativeness": ratio(
+                lambda c: c.get("exemplar_type") in ("population_data", "representative_sample")
+            ),
+            "cherry_picking_risk": ratio(lambda c: c.get("exemplar_type") in ("famous_case", "anecdote")),
+            "novelty_tradition_appeal": self._clamp01(0.7 if re.search(r"\b(tradition|always done|new and better)\b", txt) else 0.0),
+            "distraction_risk": self._clamp01(0.6 if re.search(r"\b(by the way|anyway|unrelated)\b", txt) else 0.0),
+            "redefinition_defense": self._clamp01(0.7 if re.search(r"\b(no true|real .* would)\b", txt) else 0.0),
+        }
+        return {k: round(self._clamp01(v), 4) for k, v in hints.items()}
+    
+    def analyze_argument(self, argument_text, include_improvements=False):
+        """
+        SLA single-call path:
+        - one LLM call for hint extraction only
+        - deterministic issue matching + scoring in Python
+        """
+        try:
+            self._last_usage = {}
+            word_count = len((argument_text or "").strip().split())
+            if word_count <= 5:
+                return {
+                    "success": True,
+                    "raw_analysis": "{}",
+                    "detected_issues": {
+                        "logical_fallacies": [],
+                        "cognitive_biases": [],
+                        "cognitive_distortions": [],
+                        "philosophical_razors": [],
+                        "executive_summary_sentence": "Insufficient input to analyze.",
+                        "executive_summary_bullets": ["Insufficient input to analyze, argument is likely just a statement."],
+                        "summary": "Insufficient input to analyze, argument is likely just a statement.",
+                    },
+                    "metadata": [],
+                    "short_deduction_hint": {},
+                    "score": 0,
+                    "score_breakdown": {
+                        "status_label": "Insufficient",
+                        "status_message": "Insufficient input to analyze, argument is likely just a statement.",
+                        "interpretation_27": "Insufficient input to analyze, argument is likely just a statement.",
+                        "dimension_scores": {"bias_score": 0, "testability_score": 0, "logic_score": 0},
+                    },
+                    "improvements": [],
+                    "improvements_pending": False,
+                    "pipeline_mode": "insufficient_input",
+                    "hint_values": {},
+                    "hint_vector_012": {},
+                    "hint_labels": {},
+                    "logic_hint_keys": [],
+                    "llm_usage": {},
+                    "llm_bias_signal": None,
+                }
+            metadata = self._extract_metadata_fast(argument_text)
+            short_deduction_hint = self._extract_short_deduction_hint_fast(argument_text)
+            fast_hints = self._hint_vector_fast(argument_text, metadata)
+
+            payload = {}
+            if self.use_ml_hints:
+                from semantic_hint_predictor import get_hint_vector, get_hint_vector_012
+                hints = get_hint_vector(argument_text)
+                hints_012 = get_hint_vector_012(argument_text)
+                pipeline_mode = "ml_semantic"
+                payload["hint_values"] = hints
+            elif self.use_llm_metadata:
+                include_bias = self.use_llm_bias_patch
+                prompt = self._build_hints_only_prompt(argument_text, include_bias=include_bias)
+                response = self._chat_create(
+                    "single_call_hints",
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": self.single_call_system_prompt},
+                        {"role": "user", "content": prompt},
+                    ],
+                    response_format={"type": "json_schema", "json_schema": self._hints_only_schema(include_bias=include_bias)},
+                    max_completion_tokens=int(os.getenv("SLA_MAX_COMPLETION_TOKENS", "280")),
+                )
+                raw = response.choices[0].message.content
+                payload = self._safe_json_loads(raw) if isinstance(raw, str) else {}
+                llm_hints = self._sanitize_llm_hints(payload)
+                blend = self._clamp01(float(os.getenv("HINT_BLEND_LLM", "0.7")))
+                hints = self._blend_hints(llm_hints, fast_hints, blend)
+                payload["hint_values"] = hints
+                pipeline_mode = "single_call_hints_only"
+                if include_bias and isinstance(payload, dict):
+                    payload.setdefault("top_categories", [])
+                    payload.setdefault("specific_biases", [])
+            else:
+                hints = fast_hints
+                payload["hint_values"] = hints
+                pipeline_mode = "fast_hints_only"
+
+            if pipeline_mode != "ml_semantic":
+                hints_012 = self._hints_to_012(hints)
+
+            llm_bias_signal = {}
+            if self.use_llm_bias_patch and argument_text:
+                if pipeline_mode == "single_call_hints_only" and isinstance(payload, dict):
+                    tc = payload.get("top_categories") or []
+                    sb = payload.get("specific_biases") or []
+                    if tc or sb:
+                        llm_bias_signal = {"top_categories": tc, "specific_biases": sb}
+                if not llm_bias_signal:
+                    llm_bias_signal = self._llm_bias_classifier(argument_text)
+            detected = self._detected_from_hint_vector(hints, llm_bias_signal if llm_bias_signal else None, hints_for_razors=hints_012)
+            detected_issues = self._normalize_detected_issues(detected)
+            # Rebuild exec summary from normalized list so it matches displayed order
+            s, b, m = self._build_summary_from_detected(detected_issues)
+            detected_issues["executive_summary_sentence"] = s
+            detected_issues["executive_summary_bullets"] = b
+            detected_issues["summary"] = m
+            if pipeline_mode == "ml_semantic":
+                from hint_based_scoring import compute_scores
+                scores = compute_scores(hints_012, detected_issues, argument_text)
+                score = scores["argument_strength"]
+                score_breakdown = self._hint_score_breakdown(scores, detected_issues, metadata, argument_text)
+            else:
+                score = self._calculate_score(detected_issues, argument_text, metadata, short_deduction_hint)
+                score_breakdown = self._get_score_breakdown(detected_issues, argument_text, metadata, short_deduction_hint)
+            improvements = self._deterministic_improvements(detected_issues) if include_improvements else []
+
+            payload["hint_values"] = hints
+            hint_labels = self._resolve_hint_labels(hints_012)
+            logic_hint_keys = self._get_logic_hint_keys()
             return {
                 "success": True,
-                "raw_analysis": analysis_result,
+                "raw_analysis": json.dumps(payload, ensure_ascii=True),
                 "detected_issues": detected_issues,
                 "metadata": metadata,
                 "short_deduction_hint": short_deduction_hint,
                 "score": score,
-                "score_breakdown": self._get_score_breakdown(detected_issues, argument_text, metadata, short_deduction_hint),
+                "score_breakdown": score_breakdown,
                 "improvements": improvements,
-                "improvements_pending": not include_improvements
+                "improvements_pending": False,
+                "pipeline_mode": pipeline_mode,
+                "hint_values": hints,
+                "hint_vector_012": hints_012,
+                "hint_labels": hint_labels,
+                "logic_hint_keys": logic_hint_keys,
+                "llm_usage": self._get_usage_summary(),
+                "llm_bias_signal": llm_bias_signal if llm_bias_signal else None,
             }
-            
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
+            return {"success": False, "error": str(e)}
+
+    def _get_logic_hint_keys(self):
+        """Logic-related hints only (for free-tool display)."""
+        try:
+            path = Path(__file__).resolve().parent / "phase1_artifacts" / "hint_scoring_config.json"
+            with open(path, encoding="utf-8") as f:
+                cfg = json.load(f)
+            pos = cfg.get("logic_hints_positive", [])
+            neg = cfg.get("logic_hints_negative", [])
+            return list(dict.fromkeys(pos + neg))
+        except Exception:
+            return ["claim_specificity", "counterargument_quality", "scope_qualification",
+                    "evidence_strength", "evidence_relevance", "falsifiability", "inferential_gap"]
+
+    def _resolve_hint_labels(self, hints_012):
+        """Resolve hint values to meaning labels from hint_docs.json."""
+        try:
+            path = Path(__file__).resolve().parent / "hint_docs.json"
+            with open(path, encoding="utf-8") as f:
+                docs = json.load(f)
+        except Exception:
+            return {}
+        hints_cfg = docs.get("hints", {})
+        out = {}
+        for k, v in (hints_012 or {}).items():
+            val = int(v) if v not in ("?", None) else 0
+            val = max(0, min(2, val))
+            h = hints_cfg.get(k, {})
+            meaning = h.get(f"meaning_{val}", h.get("meaning_0", ""))
+            out[k] = meaning or str(val)
+        return out
+
+    def _hints_to_012(self, hints):
+        """Convert 0-1 float hints to 0/1/2 for non-ML paths."""
+        out = {}
+        for k, v in (hints or {}).items():
+            v = self._clamp01(float(v) if v not in ("?", None) else 0)
+            if v < 0.25:
+                out[k] = 0
+            elif v < 0.75:
+                out[k] = 1
+            else:
+                out[k] = 2
+        return out
+
+    def _hints_only_schema(self, include_bias=False):
+        hint_keys = sorted(self._hint_schema().get("hints", {}).keys())
+        props = {
+            "hint_values": {
+                "type": "object",
+                "properties": {k: {"type": "integer", "minimum": 0, "maximum": 2} for k in hint_keys},
+                "required": hint_keys,
+                "additionalProperties": False,
+            },
+            "summary_sentence": {"type": "string"},
+        }
+        if include_bias:
+            props["top_categories"] = {
+                "type": "array",
+                "items": {"type": "string", "enum": ["availability", "representative", "anchoring"]},
+                "description": "Top-level bias categories that apply",
             }
-    
-    # ──────────────────────────────────────────────
-    #  CALL 1:  Lightweight metadata extraction
-    # ──────────────────────────────────────────────
+            props["specific_biases"] = {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Specific biases e.g. overgeneralization, hasty_generalization, confirmation_bias",
+            }
+        return {
+            "name": "hints_only_argument_analysis",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": props,
+                "required": ["hint_values", "summary_sentence"],
+                "additionalProperties": False,
+            },
+        }
 
-
-    def _extract_metadata(self, argument_text):
-        """
-        Cheap LLM call that decomposes the argument into individual
-        claims and tags each with structural + epistemic features.
-        Returns a list of claim dicts (or an empty list on failure).
-        """
-        prompt = f"""Break this argument into its individual claims.
-For EACH claim return a JSON object with ALL of these fields:
-
-=== STRUCTURAL TAGS (boolean / enum) ===
-- claim_text              : string – the verbatim claim (keep it short)
-- cites_evidence          : bool – references data, studies, or observable facts?
-- evidence_type           : "scientific" | "anecdotal" | "none"
-- cites_authority         : bool – names an authority figure or institution?
-- authority_named         : string (empty if none)
-- emotional_tone          : "neutral" | "positive" | "negative" | "fear" | "anger"
-- makes_causal_claim      : bool – says X causes Y?
-- generalizes             : bool – generalizes from specific cases?
-- uses_absolute_language  : bool – words like always, never, everyone, no one
-- targets_person          : bool – attacks a person instead of their point?
-- assumes_intent          : bool – attributes motive or malice?
-- is_falsifiable          : bool – could this claim be tested or disproven?
-- is_extraordinary        : bool – surprising / unusual claim?
-
-=== EXEMPLAR QUALITY ===
-- exemplar_type           : "population_data" | "representative_sample" | "famous_case" | "anecdote" | "none"
-                            What kind of example does the claim rely on?
-                            "population_data"       = cites statistics or studies covering a full population.
-                            "representative_sample" = references a broadly typical case or controlled sample.
-                            "famous_case"           = uses a well-known or cherry-picked example (e.g. Amazon, Einstein).
-                            "anecdote"              = personal story or single isolated case.
-                            "none"                  = no specific example cited.
-
-=== EPISTEMIC QUALITY (scale / enum) ===
-- face_validity           : "high" | "medium" | "low"
-                            Does the claim seem plausible on its surface to a
-                            reasonable, educated person — before checking sources?
-- speculation_level       : "none" | "low" | "moderate" | "high"
-                            How much is the claim speculating beyond available evidence?
-                            "none" = directly stating a verified fact.
-                            "high" = conjecture with little grounding.
-- claim_type              : "factual" | "historical" | "opinion" | "prediction" | "definition" | "moral"
-                            What category of statement is this?
-- evidence_sufficiency    : "strong" | "moderate" | "weak" | "none"
-                            How well does the cited evidence actually support THIS claim?
-                            "strong" = directly relevant, verifiable evidence cited.
-                            "none"   = no evidence offered or evidence is irrelevant.
-- causal_chain_length     : integer (0-5)
-                            How many cause/precursor steps does the claim cite
-                            before reaching its conclusion?
-                            0 = bare assertion, 1 = one reason given, etc.
-- inferential_gap         : "none" | "small" | "large"
-                            How big is the logical leap from the stated evidence
-                            to the conclusion drawn?
-                            "none" = conclusion follows directly.
-                            "large" = major assumptions needed to bridge the gap.
-- specificity             : "high" | "medium" | "low"
-                            Is the claim concrete and specific, or vague?
-- verifiability           : "easily" | "with_effort" | "not_verifiable"
-                            Could a third party check this claim?
-
-=== REASONING PATTERN TAGS ===
-- forces_balance          : bool
-                            Does the claim impose artificial symmetry — presenting
-                            both sides as equally weighted (pros vs cons, good vs bad)
-                            even though the evidence clearly favours one side?
-                            true = forced/artificial balance despite evidence asymmetry.
-                            false = no forced balance, or genuinely balanced evidence.
-- proportional_causation  : bool
-                            Does the claim assume the magnitude of a cause must match
-                            the magnitude of its effect? E.g., "a catastrophe this big
-                            must have been deliberate" or "such a small mistake couldn't
-                            possibly cause this much damage."
-                            true = cause-effect proportionality is assumed without evidence.
-                            false = no proportionality assumption.
-
-Return VALID JSON ONLY — an array of objects. No markdown fences.
+    def _build_hints_only_prompt(self, argument_text, include_bias=False):
+        keys = ", ".join(sorted(self._hint_schema().get("hints", {}).keys()))
+        bias_extra = ""
+        if include_bias:
+            bias_extra = """
+- Also return top_categories (max 2-3 from: availability, representative, anchoring) and specific_biases (max 2-3 from: overgeneralization, hasty_generalization, confirmation_bias, anchoring_bias, availability_heuristic, survivorship_bias). Use snake_case."""
+        return f"""Extract normalized hint values for this argument.
 
 Argument:
 \"\"\"{argument_text}\"\"\"
-"""
-        try:
-            response = self.client.chat.completions.create(
-                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-                messages=[
-                    {"role": "system", "content": (
-                        "You are a text analysis assistant. Extract structural and "
-                        "epistemic features from text. Tag each claim honestly — "
-                        "do not inflate or deflate quality. Be precise with scales."
-                    )},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.1
-            )
-            raw = response.choices[0].message.content
-            json_match = re.search(r'\[.*\]', raw, re.DOTALL)
-            if json_match:
-                claims = json.loads(json_match.group())
-                if isinstance(claims, list):
-                    return claims
-        except Exception as e:
-            print(f"Metadata extraction failed (non-fatal): {e}")
-        return []
 
-    def _extract_short_deduction_hint(self, argument_text):
+Requirements:
+- Return one value for each hint key using discrete signal levels:
+  0 = absent, 1 = medium presence, 2 = strong presence.
+- Be conservative and avoid inflated values.
+- Do not return any fallacy, bias, or distortion labels.{bias_extra}
+
+Hint keys:
+{keys}
+"""
+
+    def _sanitize_llm_hints(self, payload):
+        if not isinstance(payload, dict):
+            return {}
+        hints = payload.get("hint_values", {})
+        if not isinstance(hints, dict):
+            return {}
+        out = {}
+        for k in self._hint_schema().get("hints", {}).keys():
+            out[k] = self._clamp01(self._signal_to_unit(hints.get(k, 0)))
+        return out
+
+    def _blend_hints(self, llm_hints, fast_hints, blend):
+        out = {}
+        all_keys = set((llm_hints or {}).keys()) | set((fast_hints or {}).keys())
+        for key in all_keys:
+            lv = self._clamp01((llm_hints or {}).get(key, 0.0))
+            fv = self._clamp01((fast_hints or {}).get(key, 0.0))
+            out[key] = round((blend * lv) + ((1.0 - blend) * fv), 4)
+        return out
+
+    def _deterministic_improvements(self, detected_issues):
+        tips = []
+        for category in ("logical_fallacies", "cognitive_biases", "cognitive_distortions"):
+            for item in (detected_issues.get(category) or [])[:3]:
+                key = item.get("key")
+                defn = self.definitions.get(category, {}).get(key, {})
+                arr = defn.get("improvements", [])
+                if arr:
+                    tips.append(str(arr[0]))
+        for item in (detected_issues.get("philosophical_razors") or []):
+            if item.get("pass", False):
+                continue
+            key = item.get("key")
+            tip = self.definitions.get("philosophical_razors", {}).get(key, {}).get("improvement")
+            if tip:
+                tips.append(str(tip))
+            if len(tips) >= 5:
+                break
+        return tips[:5]
+
+    @staticmethod
+    def _safe_json_loads(raw_text):
+        """Parse strict JSON with a light markdown-fence fallback."""
+        if isinstance(raw_text, dict):
+            return raw_text
+        text = (raw_text or "").strip()
+        if not text:
+            return {}
+        try:
+            return json.loads(text)
+        except Exception:
+            if text.startswith("```"):
+                text = re.sub(r"^```(?:json)?\s*", "", text)
+                text = re.sub(r"\s*```$", "", text)
+                try:
+                    return json.loads(text.strip())
+                except Exception:
+                    return {}
+        return {}
+
+
+    def _extract_metadata_fast(self, argument_text):
         """
-        Extra short-input logic check for concise deductive arguments (e.g., math/philosophy).
-        Runs only on short text to keep latency and cost bounded.
+        Deterministic extractor for obvious signals only.
+        Non-obvious claim quality variables are enriched by a single LLM call
+        (with graceful fallback to deterministic defaults on timeout/failure).
+        """
+        text = (argument_text or "").strip()
+        if not text:
+            return []
+
+        claim_candidates = [c.strip() for c in re.split(r'(?<=[\.\!\?])\s+|\n+', text) if c.strip()]
+        claims = claim_candidates[:14] if claim_candidates else [text[:240]]
+
+        evidence_pattern = r"\b(study|studies|research|report|data|evidence|survey|statistics|trial|meta-analysis|paper|journal|dataset)\b"
+        anecdote_pattern = r"\b(i|my|me|we|our|friend|family|personally|in my experience|someone i know)\b"
+        authority_pattern = r"\b(expert|scientist|doctor|professor|institution|university|organization|according to)\b"
+        causal_pattern = r"\b(because|therefore|thus|hence|as a result|resulting in|causes|leads to|due to|since)\b"
+        absolute_pattern = r"\b(always|never|everyone|no one|all|none|must|cannot|impossible|definitely|certainly)\b"
+        hedge_pattern = r"\b(might|may|could|possibly|perhaps|likely|probably|arguably|typically|often|sometimes)\b"
+        measurable_pattern = r"\b(test|measure|verify|disprove|falsif|experiment|trial)\b"
+        counter_pattern = r"\b(however|although|though|on the other hand|nevertheless|but)\b"
+        qualifier_pattern = r"\b(in some cases|under certain conditions|typically|often|sometimes|unless|except)\b"
+
+        metadata = []
+        for claim in claims:
+            c = claim.lower()
+            cites_evidence = bool(re.search(evidence_pattern, c))
+            has_anecdote = bool(re.search(anecdote_pattern, c))
+            cites_authority = bool(re.search(authority_pattern, c))
+            makes_causal_claim = bool(re.search(causal_pattern, c))
+            uses_absolute = bool(re.search(absolute_pattern, c))
+            has_hedges = bool(re.search(hedge_pattern, c))
+            has_counter = bool(re.search(counter_pattern, c))
+            has_qualifier = bool(re.search(qualifier_pattern, c))
+
+            if cites_evidence and not has_anecdote:
+                evidence_type = "scientific"
+            elif has_anecdote:
+                evidence_type = "anecdotal"
+            else:
+                evidence_type = "none"
+
+            metadata.append({
+                "claim_text": claim[:220],
+                "cites_evidence": cites_evidence,
+                "evidence_type": evidence_type,
+                "cites_authority": cites_authority,
+                "authority_named": "",
+                "emotional_tone": "neutral",  # placeholder; refined by LLM enrich
+                "makes_causal_claim": makes_causal_claim,
+                "generalizes": bool(re.search(r"\b(all|everyone|people|society|humans)\b", c)),
+                "uses_absolute_language": uses_absolute,
+                "targets_person": bool(re.search(r"\b(idiot|stupid|ignorant|fool|liar)\b", c)),
+                "assumes_intent": False,  # placeholder; refined by LLM enrich
+                "is_falsifiable": bool(re.search(measurable_pattern, c)),
+                "is_extraordinary": False,  # placeholder; refined by LLM enrich
+                "exemplar_type": "none",  # placeholder; refined by LLM enrich
+                "face_validity": "medium",  # placeholder; refined by LLM enrich
+                "speculation_level": "low" if has_hedges else "moderate",
+                "claim_type": "prediction" if re.search(r"\b(will|going to|future)\b", c) else "factual",
+                "evidence_sufficiency": "none",  # placeholder; refined by LLM enrich
+                "evidence_relevance": "none",  # placeholder; refined by LLM enrich
+                "causal_chain_length": min(5, len(re.findall(causal_pattern, c))),
+                "inferential_gap": "small",  # placeholder; refined by LLM enrich
+                "specificity": "high" if re.search(r"\b\d+|percent|rate|sample|group|year\b", c) else "medium",
+                "verifiability": "with_effort" if cites_evidence else "not_verifiable",
+                "forces_balance": False,  # placeholder; refined by LLM enrich
+                "proportional_causation": False,  # placeholder; refined by LLM enrich
+                "acknowledges_counterargument": has_counter,
+                "scope_qualified": has_qualifier or has_hedges,
+            })
+
+        return metadata
+
+    def _extract_short_deduction_hint_fast(self, argument_text):
+        """
+        Deterministic short-input deduction signal to avoid an extra LLM call.
         """
         words = len((argument_text or "").split())
         if words == 0 or words > 80:
@@ -205,372 +1094,33 @@ Argument:
                 "reason": ""
             }
 
-        prompt = f"""Assess whether this SHORT argument is a valid concise deductive argument.
-Focus on formal reasoning quality, even if evidence citations are absent.
+        text = (argument_text or "").lower()
+        has_if = bool(re.search(r"\bif\b", text))
+        has_then = bool(re.search(r"\b(then|therefore|thus|hence)\b", text))
+        has_conclusion = bool(re.search(r"\b(therefore|thus|hence)\b", text))
+        has_contradiction = bool(("always" in text and "never" in text) or ("must" in text and "cannot" in text))
 
-Return VALID JSON ONLY with fields:
-- is_short_deduction: boolean
-- deduction_strength: "none" | "weak" | "moderate" | "strong"
-- reason: brief explanation (1 sentence)
+        is_short_deduction = has_if and (has_then or has_conclusion)
+        if has_contradiction:
+            strength = "weak"
+        elif is_short_deduction and has_then and has_conclusion:
+            strength = "strong"
+        elif is_short_deduction:
+            strength = "moderate"
+        else:
+            strength = "none"
 
-Argument:
-\"\"\"{argument_text}\"\"\"
-"""
-        try:
-            response = self.client.chat.completions.create(
-                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a formal reasoning evaluator. For short statements, detect "
-                            "valid deductive structure and avoid penalizing lack of empirical evidence."
-                        ),
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.1,
-            )
-            raw = response.choices[0].message.content
-            json_match = re.search(r"\{.*\}", raw, re.DOTALL)
-            if json_match:
-                hint = json.loads(json_match.group())
-                strength = str(hint.get("deduction_strength", "none")).lower()
-                if strength not in {"none", "weak", "moderate", "strong"}:
-                    strength = "none"
-                return {
-                    "checked": True,
-                    "is_short_deduction": bool(hint.get("is_short_deduction", False)),
-                    "deduction_strength": strength,
-                    "reason": str(hint.get("reason", ""))[:240],
-                }
-        except Exception as e:
-            print(f"Short deduction hint failed (non-fatal): {e}")
-
+        reason = "Deterministic short-form deduction signal based on condition/conclusion markers."
         return {
             "checked": True,
-            "is_short_deduction": False,
-            "deduction_strength": "none",
-            "reason": ""
+            "is_short_deduction": is_short_deduction,
+            "deduction_strength": strength,
+            "reason": reason[:240],
         }
 
-    def _metadata_to_context(self, metadata):
-        """
-        Aggregates raw per-claim metadata into a concise context
-        block for the main analysis prompt.
-        """
-        if not metadata:
-            return ""
-
-        total = len(metadata)
-
-        # --- Structural counts ---
-        evidence_claims = [c for c in metadata if c.get("cites_evidence")]
-        causal_claims   = [c for c in metadata if c.get("makes_causal_claim")]
-        emotional       = [c for c in metadata if c.get("emotional_tone") not in ("neutral", None)]
-        absolute_lang   = [c for c in metadata if c.get("uses_absolute_language")]
-        person_attacks  = [c for c in metadata if c.get("targets_person")]
-        unfalsifiable   = [c for c in metadata if not c.get("is_falsifiable")]
-        extraordinary   = [c for c in metadata if c.get("is_extraordinary")]
-        generalizing    = [c for c in metadata if c.get("generalizes")]
-        intent_assumed  = [c for c in metadata if c.get("assumes_intent")]
-        forced_balance  = [c for c in metadata if c.get("forces_balance")]
-        prop_causation  = [c for c in metadata if c.get("proportional_causation")]
-
-        # --- Epistemic aggregations ---
-        def _count(field, value):
-            return sum(1 for c in metadata if c.get(field) == value)
-
-        high_validity   = _count("face_validity", "high")
-        low_validity    = _count("face_validity", "low")
-        high_spec       = _count("speculation_level", "high") + _count("speculation_level", "moderate")
-        no_spec         = _count("speculation_level", "none")
-        strong_ev       = _count("evidence_sufficiency", "strong")
-        weak_ev         = _count("evidence_sufficiency", "weak") + _count("evidence_sufficiency", "none")
-        large_gap       = _count("inferential_gap", "large")
-        no_gap          = _count("inferential_gap", "none")
-        high_specific   = _count("specificity", "high")
-        low_specific    = _count("specificity", "low")
-        easily_verified = _count("verifiability", "easily")
-        not_verifiable  = _count("verifiability", "not_verifiable")
-
-        type_counts = {}
-        for c in metadata:
-            ct = c.get("claim_type", "unknown")
-            type_counts[ct] = type_counts.get(ct, 0) + 1
-
-        avg_chain = 0.0
-        chain_vals = [c.get("causal_chain_length", 0) for c in metadata if isinstance(c.get("causal_chain_length"), (int, float))]
-        if chain_vals:
-            avg_chain = sum(chain_vals) / len(chain_vals)
-
-        # --- Build context block ---
-        lines = [
-            f"The argument contains {total} individual claim(s).",
-            "",
-            "STRUCTURAL PROFILE:",
-            f"  - {len(evidence_claims)} cite evidence ({_count('evidence_type', 'scientific')} scientific, "
-            f"{_count('evidence_type', 'anecdotal')} anecdotal).",
-            f"  - {len(causal_claims)} make causal claims.",
-            f"  - {len(emotional)} have non-neutral emotional tone.",
-            f"  - {len(absolute_lang)} use absolute language (always/never/everyone).",
-            f"  - {len(person_attacks)} target a person rather than their argument.",
-            f"  - {len(unfalsifiable)} appear unfalsifiable.",
-            f"  - {len(extraordinary)} make extraordinary claims.",
-            f"  - {len(generalizing)} generalize from specific cases.",
-            f"  - {len(intent_assumed)} assume intent or motive.",
-            f"  - {len(forced_balance)} impose artificial symmetry/balance despite evidence asymmetry.",
-            f"  - {len(prop_causation)} assume cause-effect proportionality without justification.",
-            f"  - Exemplar types: {_count('exemplar_type', 'population_data')} population data, "
-            f"{_count('exemplar_type', 'representative_sample')} representative sample, "
-            f"{_count('exemplar_type', 'famous_case')} famous/cherry-picked case, "
-            f"{_count('exemplar_type', 'anecdote')} anecdote, "
-            f"{_count('exemplar_type', 'none')} none.",
-            "",
-            "EPISTEMIC PROFILE:",
-            f"  - Face validity:        {high_validity} high, {_count('face_validity', 'medium')} medium, {low_validity} low.",
-            f"  - Speculation:           {no_spec} grounded (none), {high_spec} moderate-to-high speculation.",
-            f"  - Evidence sufficiency:  {strong_ev} strong, {_count('evidence_sufficiency', 'moderate')} moderate, {weak_ev} weak/none.",
-            f"  - Avg causal chain:      {avg_chain:.1f} steps (0 = bare assertion, 3+ = well-built reasoning).",
-            f"  - Inferential gaps:      {no_gap} none, {_count('inferential_gap', 'small')} small, {large_gap} large.",
-            f"  - Specificity:           {high_specific} high, {low_specific} low.",
-            f"  - Verifiability:         {easily_verified} easily verified, {not_verifiable} not verifiable.",
-            f"  - Claim types:           {', '.join(f'{v} {k}' for k, v in sorted(type_counts.items(), key=lambda x: -x[1]))}.",
-        ]
-
-        # --- Flags (targeted alerts for Call 2) ---
-        lines.append("")
-        lines.append("FLAGS:")
-
-        if person_attacks:
-            lines.append("  ⚑ Person-targeting detected — check for Ad Hominem / Tu Quoque.")
-        if absolute_lang:
-            lines.append("  ⚑ Absolute language detected — check for All-or-Nothing thinking / Overgeneralization.")
-        if extraordinary and not evidence_claims:
-            lines.append("  ⚑ Extraordinary claims without evidence — likely fails Sagan Standard.")
-        if unfalsifiable:
-            lines.append("  ⚑ Unfalsifiable claims found — likely fails Popper's Falsifiability.")
-        if high_spec >= total * 0.5:
-            lines.append("  ⚑ Majority of claims are speculative — watch for Hasty Generalization / Jumping to Conclusions.")
-        if large_gap >= 2:
-            lines.append("  ⚑ Multiple large inferential gaps — watch for Non Sequitur / Slippery Slope.")
-        if weak_ev >= total * 0.5 and causal_claims:
-            lines.append("  ⚑ Causal claims with weak evidence — watch for Post Hoc / False Cause.")
-        if low_validity >= 2:
-            lines.append("  ⚑ Multiple low face-validity claims — argument may be hard to take seriously without strong evidence.")
-        if not_verifiable >= total * 0.5:
-            lines.append("  ⚑ Most claims are not independently verifiable — weakens overall credibility.")
-        if avg_chain < 0.5 and total >= 3:
-            lines.append("  ⚑ Claims are mostly bare assertions (avg chain < 0.5) — little supporting reasoning provided.")
-
-        # ── Niche bias nudges ──
-
-        # Exemplar-quality counts (from Call 1's new field)
-        famous_cases = [c for c in metadata if c.get("exemplar_type") == "famous_case"]
-        anecdotes    = [c for c in metadata if c.get("exemplar_type") == "anecdote"]
-        pop_data     = [c for c in metadata if c.get("exemplar_type") in
-                        ("population_data", "representative_sample")]
-        cherry_picked = len(famous_cases) + len(anecdotes)
-
-        # Survivorship bias: only when the argument genuinely cherry-picks minority
-        # or famous cases while generalizing.  Population data or representative
-        # samples should NOT trigger this — hypothesizing an invisible counter-sample
-        # against solid data is itself unfalsifiable (Russell's Teapot).
-        if cherry_picked >= 2 and generalizing and len(pop_data) < cherry_picked:
-            lines.append(
-                "  ⚑ Argument generalizes from famous/cherry-picked cases — check for "
-                "Survivorship Bias (visible successes cited while failures are absent)."
-            )
-
-        if intent_assumed:
-            lines.append(
-                "  ⚑ Intent/motive assumed — check for Empathy Gap (underestimating others' "
-                "emotional states) and Fundamental Attribution Error (attributing behaviour to "
-                "character rather than circumstance)."
-            )
-
-        self_serving_claims = [c for c in metadata
-                               if c.get("claim_type") == "opinion"
-                               and c.get("speculation_level") in ("moderate", "high")]
-        if self_serving_claims and len(self_serving_claims) >= total * 0.4:
-            lines.append(
-                "  ⚑ Many speculative opinion claims — check for Self-Serving Bias "
-                "(interpreting information in a way that flatters or protects the arguer's position)."
-            )
-
-        simple_proxy = [c for c in metadata
-                        if c.get("inferential_gap") == "large"
-                        and c.get("specificity") == "low"]
-        if simple_proxy:
-            lines.append(
-                "  ⚑ Vague claims with large inferential leaps — check for Attribute Substitution "
-                "(swapping a hard question for an easier proxy) and Belief Bias "
-                "(accepting reasoning because the conclusion feels right)."
-            )
-
-        if emotional and len(emotional) >= total * 0.5:
-            lines.append(
-                "  ⚑ Majority of claims carry emotional tone — check for Egocentric Bias "
-                "(over-relying on one's own perspective) in addition to emotional reasoning."
-            )
-
-        # Russell's Teapot: unfalsifiable claims that shift the burden of proof
-        unfalsifiable_speculative = [c for c in metadata
-                                     if not c.get("is_falsifiable")
-                                     and c.get("speculation_level") in ("moderate", "high")]
-        if unfalsifiable_speculative and len(unfalsifiable_speculative) >= 2:
-            lines.append(
-                "  ⚑ Multiple unfalsifiable speculative claims — check for Russell's Teapot "
-                "(shifting the burden of proof by making claims others cannot disprove)."
-            )
-
-        # Symmetry Impulse: forced balance / artificial symmetry
-        if forced_balance:
-            lines.append(
-                "  ⚑ Claims impose artificial balance (e.g., pros must equal cons, every "
-                "positive must have a negative) — check for Symmetry Impulse "
-                "(using symmetry to complete judgments when evidence doesn't support equal weight)."
-            )
-
-        # Proportionality Bias (MEMC): cause-effect magnitude matching
-        if prop_causation:
-            lines.append(
-                "  ⚑ Claims assume cause magnitude must match effect magnitude — check for "
-                "Proportionality Bias / Major-Event-Major-Cause heuristic "
-                "(large effects must have large causes, dismissing small or accidental causes)."
-            )
-
-        # Maslow's Hammer: applying one framework/theory to everything
-        if generalizing and len(causal_claims) >= 3 and len(type_counts) <= 2:
-            lines.append(
-                "  ⚑ Multiple causal claims from a narrow framework — check for Maslow's Hammer "
-                "(forcing one explanatory theory onto every aspect of the issue)."
-            )
-
-        if no_spec == total and strong_ev >= total * 0.6:
-            lines.append("  ✓ Mostly grounded claims with strong evidence — likely a well-supported argument.")
-        if easily_verified >= total * 0.6:
-            lines.append("  ✓ Most claims are easily verifiable — strengthens testability for razor evaluation.")
-
-        return "\n".join(lines)
-
-    # ──────────────────────────────────────────────
-    #  CALL 2:  Main analysis prompt (metadata-enriched)
-    # ──────────────────────────────────────────────
-
-    def _create_analysis_prompt(self, argument_text, metadata=None):
-        """Create the prompt for the main OpenAI analysis call."""
-
-        fallacies = list(self.definitions.get('logical_fallacies', {}).keys())
-        biases = list(self.definitions.get('cognitive_biases', {}).keys())
-        distortions = list(self.definitions.get('cognitive_distortions', {}).keys())
-        razors = list(self.definitions.get('philosophical_razors', {}).keys())
-
-        metadata_block = ""
-        if metadata:
-            summary = self._metadata_to_context(metadata)
-            metadata_block = f"""
---- PRE-ANALYSIS (structural metadata extracted from the argument) ---
-{summary}
---- END PRE-ANALYSIS ---
-
-Use the structural metadata above to guide your analysis.
-Where a flag is raised (⚑), pay close attention to the related category.
-Where evidence or falsifiability is noted, factor it into your razor evaluations.
-
-"""
-
-        prompt = f"""Analyze the following argument for:
-- logical fallacies (detect ALL that are genuinely present)
-- cognitive biases (detect ALL that are genuinely present)
-- cognitive distortions (detect ALL that are genuinely present)
-- philosophical razors (evaluate ALL razors listed, pass/fail each, with a short reason)
-
-Argument: "{argument_text}"
-
-{metadata_block}IMPORTANT RULES:
-- Return VALID JSON ONLY (no markdown, no extra text).
-- For fallacies, biases, and distortions: return EVERY item you detect with confidence >= 0.6.
-  Include as many or as few as are truly present. Do NOT pad with "none".
-- Only use keys from the available lists below.
-- Be accurate: only label a fallacy/bias/distortion if it is genuinely present.
-- Include a confidence score (0.0 to 1.0) for each item.
-- BIAS SPECIFICITY RULE: Always prefer a specific bias over a generic parent.
-  If the argument interprets evidence in a self-flattering way, flag "self_serving_bias"
-  rather than "confirmation_bias". Only use "confirmation_bias" when no more specific
-  variant applies. Similarly, prefer "fundamental_attribution_error" or "empathy_gap"
-  over vague labels when the mechanism is clear.
-- SURVIVORSHIP BIAS GUARD: Only flag "survivorship_bias" when the argument *explicitly*
-  draws conclusions from a few visible/successful cases while clearly ignoring known
-  failures or counter-examples (e.g., "my uncle smoked and lived to 95, so smoking is
-  fine"). Do NOT flag it merely because the argument generalizes or because you can
-  hypothesize an unseen counter-sample. The accusation of survivorship bias must itself
-  be falsifiable — there must be a concrete, identifiable missing sample, not just a
-  theoretical one.
-- SYMMETRY IMPULSE: Flag "symmetry_impulse" when the argument forces artificial balance
-  or symmetry — e.g. assuming every pro must have a con, every positive a negative, or
-  that both sides deserve equal weight despite evidence strongly favouring one side.
-  Do NOT flag it when the argument presents genuinely balanced evidence.
-- PROPORTIONALITY BIAS: Flag "proportionality_bias" when the argument assumes that the
-  magnitude of a cause must match the magnitude of its effect (large events need large
-  causes). Classic indicator: dismissing simple or accidental causes because the outcome
-  is dramatic, or inflating a cause to match a dramatic consequence.
-- For philosophical_razors, you MUST return ONE object for EVERY razor listed below (no omissions), each with:
-  - the correct "key" from the list,
-  - a boolean "pass",
-  - a non-empty "reason" explaining why it passes or fails in the context of THIS argument,
-  - a confidence value.
-
-Return this JSON schema exactly:
-{{
-  "logical_fallacies": [{{"key":"...", "reason":"...", "confidence": 0.0}}],
-  "cognitive_biases": [{{"key":"...", "reason":"...", "confidence": 0.0}}],
-  "cognitive_distortions": [{{"key":"...", "reason":"...", "confidence": 0.0}}],
-  "philosophical_razors": [
-    {{"key":"razor_key_from_list", "pass": true, "reason":"...", "confidence": 0.0}},
-    {{"key":"razor_key_from_list", "pass": false, "reason":"...", "confidence": 0.0}}
-  ],
-  "executive_summary_sentence": "One short sentence summarizing the argument.",
-  "executive_summary_bullets": ["Bullet 1", "Bullet 2", "Bullet 3"],
-  "summary": "1-3 sentences summarizing the biggest weaknesses and biggest strengths."
-}}
-
-Available logical fallacies: {', '.join(fallacies)}
-Available cognitive biases: {', '.join(biases)}
-Available cognitive distortions: {', '.join(distortions)}
-Available philosophical razors: {', '.join(razors)}
-"""
-
-        return prompt
-    
-    def _parse_openai_response(self, response_text):
-        """Parse OpenAI response to extract detected issues"""
-        try:
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-            if json_match:
-                parsed = json.loads(json_match.group())
-                return {
-                    "logical_fallacies": parsed.get("logical_fallacies", []),
-                    "cognitive_biases": parsed.get("cognitive_biases", []),
-                    "cognitive_distortions": parsed.get("cognitive_distortions", []),
-                    "philosophical_razors": parsed.get("philosophical_razors", []),
-                    "executive_summary_sentence": parsed.get("executive_summary_sentence", ""),
-                    "executive_summary_bullets": parsed.get("executive_summary_bullets", []),
-                    "summary": parsed.get("summary", "")
-                }
-        except:
-            pass
-        
-        # Fallback: return empty structure
-        return {
-            "logical_fallacies": [],
-            "cognitive_biases": [],
-            "cognitive_distortions": [],
-            "philosophical_razors": [],
-            "executive_summary_sentence": "",
-            "executive_summary_bullets": [],
-            "summary": response_text
-        }
+    def _extract_short_deduction_hint(self, argument_text):
+        """Deprecated LLM path removed; deterministic hint only."""
+        return self._extract_short_deduction_hint_fast(argument_text)
 
     # Specificity-first bias hierarchy: if a niche child is detected,
     # suppress the generic parent (the child already implies it).
@@ -637,11 +1187,11 @@ Available philosophical razors: {', '.join(razors)}
         - Include ALL razors with pass boolean (default false if missing).
         - Attach name/penalty/reward/description from definitions.json.
         """
-        issue_confidence = float(os.getenv("ISSUE_CONFIDENCE", "0.20"))
+        issue_confidence = float(os.getenv("ISSUE_CONFIDENCE", "0.64"))
         razor_confidence = float(os.getenv("RAZOR_CONFIDENCE", "0.30"))
 
         def _normalize_all(items, definition_group):
-            """Accept ALL valid items above the confidence threshold."""
+            """Accept valid items above confidence threshold only. No top-k; threshold gates detection."""
             allowed = set(self.definitions.get(definition_group, {}).keys())
             normalized = []
 
@@ -671,11 +1221,15 @@ Available philosophical razors: {', '.join(razors)}
                     "confidence": confidence
                 })
 
-            normalized.sort(key=lambda x: abs(x["penalty"]), reverse=True)
+            # Rank by confidence × severity (not penalty alone): high-confidence serious issues first
+            rank_by = os.getenv("RANK_BY", "confidence_x_severity").strip().lower()
+            if rank_by == "penalty":
+                normalized.sort(key=lambda x: abs(x["penalty"]), reverse=True)
+            else:
+                normalized.sort(key=lambda x: x["confidence"] * max(1, abs(x["penalty"])), reverse=True)
             return normalized
 
-        biases = _normalize_all(detected.get("cognitive_biases", []), "cognitive_biases")
-        biases = self._deduplicate_biases(biases)
+        biases = self._deduplicate_biases(_normalize_all(detected.get("cognitive_biases", []), "cognitive_biases"))
 
         out = {
             "logical_fallacies": _normalize_all(detected.get("logical_fallacies", []), "logical_fallacies"),
@@ -719,73 +1273,9 @@ Available philosophical razors: {', '.join(razors)}
 
         return out
     
-    # ──────────────────────────────────────────────
-    #  CALL 3:  Improvement suggestions
-    # ──────────────────────────────────────────────
-
-    def _generate_improvements(self, argument_text, detected_issues):
-        """
-        Build deterministic improvement context from definitions, then ask
-        the LLM to synthesize exactly 5 concrete, actionable suggestions.
-        """
-        try:
-            hints = []
-
-            for category in ("logical_fallacies", "cognitive_biases", "cognitive_distortions"):
-                for item in detected_issues.get(category, []):
-                    key = item.get("key") if isinstance(item, dict) else item
-                    defn = self.definitions.get(category, {}).get(key)
-                    if defn and "improvements" in defn:
-                        for tip in defn["improvements"]:
-                            hints.append(f"[{defn['name']}] {tip}")
-
-            for item in detected_issues.get("philosophical_razors", []):
-                if isinstance(item, dict) and not item.get("pass", False):
-                    key = item.get("key", "")
-                    defn = self.definitions.get("philosophical_razors", {}).get(key)
-                    if defn and "improvement" in defn:
-                        hints.append(f"[{defn['name']} — failed] {defn['improvement']}")
-
-            if not hints:
-                return []
-
-            hints_block = "\n".join(f"- {h}" for h in hints[:20])
-
-            prompt = f"""Given this argument:
-\"\"\"{argument_text[:1500]}\"\"\"
-
-The analysis detected these issues with mapped improvement strategies:
-{hints_block}
-
-Synthesize exactly 5 concrete, actionable suggestions the author can implement to strengthen this argument. Each should be 1-2 sentences. Be specific to this argument's content. Do NOT repeat the issue name — focus on the fix.
-
-Return a JSON array of 5 strings, nothing else. Example:
-["suggestion 1", "suggestion 2", "suggestion 3", "suggestion 4", "suggestion 5"]"""
-
-            response = self.client.chat.completions.create(
-                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-                messages=[
-                    {"role": "system", "content": "You are a writing coach. Return only valid JSON."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.4
-            )
-
-            raw = response.choices[0].message.content.strip()
-            if raw.startswith("```"):
-                raw = re.sub(r"^```(?:json)?\s*", "", raw)
-                raw = re.sub(r"\s*```$", "", raw)
-
-            suggestions = json.loads(raw)
-            if isinstance(suggestions, list):
-                return [str(s) for s in suggestions[:5]]
-            return []
-        except Exception:
-            return []
-
     def generate_improvements(self, argument_text, detected_issues):
-        """Public wrapper used by deferred-improvements background jobs."""
-        return self._generate_improvements(argument_text, detected_issues)
+        """Deterministic suggestions used by deferred improvement jobs."""
+        return self._deterministic_improvements(detected_issues)
 
     @staticmethod
     def _substance_penalty(argument_text, metadata):
@@ -866,12 +1356,20 @@ Return a JSON array of 5 strings, nothing else. Example:
         text = argument_text or ""
         lowered = text.lower()
         claim_count = len(metadata)
+        llm_claim_count = metadata[0].get("__llm_claim_count") if metadata else None
+        if isinstance(llm_claim_count, int) and llm_claim_count > 0:
+            claim_count = llm_claim_count
 
         assumption_pattern = r"\b(assume|assuming|suppose|supposing|given that|let us assume|if we accept|granted)\b"
         boundary_pattern = r"\b(under this assumption|within this framework|if this holds|therefore|thus|hence|then)\b"
         if_pattern = r"\bif\b"
         then_pattern = r"\b(then|therefore|thus|hence|so)\b"
-        connector_pattern = r"\b(because|therefore|thus|hence|so|implies|suggests|indicates|evidence shows|consistent with|as a result|given that)\b"
+        connector_pattern = r"\b(because|therefore|thus|hence|so|implies|suggests|indicates|evidence shows|consistent with|as a result|given that|this means|which implies|follows that)\b"
+        causal_marker_pattern = r"\b(because|therefore|thus|hence|as a result|resulting in|leads to|causes|due to|since|drives|produces|triggers)\b"
+        evidence_marker_pattern = r"\b(study|studies|research|data|evidence|report|survey|statistics|meta-analysis|trial|paper|journal|dataset|sample|cohort|rct|longitudinal)\b"
+        citation_pattern = r"(\(\s*(19|20)\d{2}\s*\)|\[[0-9]{1,3}\]|doi|et al\.)"
+        counterargument_pattern = r"\b(however|although|though|on the other hand|nevertheless|nonetheless|yet|but)\b"
+        qualifier_pattern = r"\b(in some cases|under certain conditions|typically|often|sometimes|in general|for example|for instance|except|unless)\b"
         hedge_pattern = r"\b(might|may|could|possibly|perhaps|likely|plausibly|probably|arguably)\b"
         absolute_pattern = r"\b(always|never|everyone|no one|all|none|must|cannot|impossible|certainly|definitely)\b"
 
@@ -880,6 +1378,15 @@ Return a JSON array of 5 strings, nothing else. Example:
         if_then_count = len(re.findall(if_pattern, lowered))
         then_count = len(re.findall(then_pattern, lowered))
         connector_count = len(re.findall(connector_pattern, lowered))
+        causal_marker_count = len(re.findall(causal_marker_pattern, lowered))
+        llm_marker_hits = sum(1 for c in metadata if c.get("__llm_evidence_marker") is True)
+        if llm_marker_hits > 0:
+            evidence_marker_count = llm_marker_hits
+        else:
+            evidence_marker_count = len(re.findall(evidence_marker_pattern, lowered))
+        citation_count = len(re.findall(citation_pattern, lowered))
+        counterargument_markers = len(re.findall(counterargument_pattern, lowered))
+        qualifier_markers = len(re.findall(qualifier_pattern, lowered))
         hedges = len(re.findall(hedge_pattern, lowered))
         absolute_terms = len(re.findall(absolute_pattern, lowered))
 
@@ -893,18 +1400,29 @@ Return a JSON array of 5 strings, nothing else. Example:
         else:
             if_then_completeness = min(100.0, (then_count / float(if_then_count)) * 100.0)
 
-        contradiction_signals = 0
-        if "always" in lowered and "never" in lowered:
-            contradiction_signals += 1
-        if "all " in lowered and "none " in lowered:
-            contradiction_signals += 1
-        if "must" in lowered and "cannot" in lowered:
-            contradiction_signals += 1
-
         high_gap = sum(1 for c in metadata if c.get("inferential_gap") == "large")
         low_validity = sum(1 for c in metadata if c.get("face_validity") == "low")
-        contradiction_signals += 1 if high_gap >= 2 and low_validity >= 1 else 0
-        contradiction_index = min(100.0, contradiction_signals * 22.0 + high_gap * 12.0 + low_validity * 8.0)
+        weak_evidence_claims = sum(1 for c in metadata if c.get("evidence_sufficiency") in ("weak", "none"))
+        unsupported_link_ratio = self._safe_ratio(max(0, high_gap + low_validity), claim_count if claim_count else 1)
+
+        logic_break_signals = 0
+        if high_gap >= 2:
+            logic_break_signals += 1
+        if low_validity >= 2:
+            logic_break_signals += 1
+        if weak_evidence_claims >= 2 and high_gap >= 1:
+            logic_break_signals += 1
+        if if_then_count >= 1 and if_then_completeness < 45:
+            logic_break_signals += 1
+
+        incoherence_index = min(
+            100.0,
+            (logic_break_signals * 18.0)
+            + (high_gap * 10.0)
+            + (low_validity * 8.0)
+            + (unsupported_link_ratio * 24.0),
+        )
+        coherence_score = max(0.0, min(100.0, 100.0 - incoherence_index))
 
         weak_ev = sum(1 for c in metadata if c.get("evidence_sufficiency") in ("weak", "none"))
         abs_claims = sum(1 for c in metadata if c.get("uses_absolute_language"))
@@ -930,9 +1448,14 @@ Return a JSON array of 5 strings, nothing else. Example:
         connector_score = min(100.0, (connector_count * 12.0) + (then_count * 8.0) + (if_then_count * 6.0))
 
         strong_ev = sum(1 for c in metadata if c.get("evidence_sufficiency") in ("strong", "moderate"))
+        relevance_high = sum(1 for c in metadata if c.get("evidence_relevance") == "high")
+        relevance_mid = sum(1 for c in metadata if c.get("evidence_relevance") == "medium")
+        relevance_low = sum(1 for c in metadata if c.get("evidence_relevance") in ("low", "none"))
         falsifiable = sum(1 for c in metadata if c.get("is_falsifiable"))
         verifiable = sum(1 for c in metadata if c.get("verifiability") in ("easily", "with_effort"))
         small_gap = sum(1 for c in metadata if c.get("inferential_gap") in ("none", "small"))
+        scope_qualified_claims = sum(1 for c in metadata if c.get("scope_qualified"))
+        counterargument_claims = sum(1 for c in metadata if c.get("acknowledges_counterargument"))
         science_reasoning_proxy = (
             0.34 * (self._safe_ratio(strong_ev, claim_count if claim_count else 1) * 100.0)
             + 0.24 * (self._safe_ratio(falsifiable, claim_count if claim_count else 1) * 100.0)
@@ -941,17 +1464,59 @@ Return a JSON array of 5 strings, nothing else. Example:
         )
         science_reasoning_proxy = max(0.0, min(100.0, science_reasoning_proxy))
 
+        evidence_grounding_score = (
+            0.42 * min(100.0, evidence_marker_count * 8.0)
+            + 0.18 * min(100.0, citation_count * 18.0)
+            + 0.20 * (self._safe_ratio(strong_ev, claim_count if claim_count else 1) * 100.0)
+            + 0.20 * (self._safe_ratio(verifiable, claim_count if claim_count else 1) * 100.0)
+        )
+        evidence_grounding_score = max(0.0, min(100.0, evidence_grounding_score))
+
+        evidence_relevance_score = (
+            0.55 * (self._safe_ratio(relevance_high, claim_count if claim_count else 1) * 100.0)
+            + 0.25 * (self._safe_ratio(relevance_mid, claim_count if claim_count else 1) * 100.0)
+            + 0.20 * max(0.0, 100.0 - (self._safe_ratio(relevance_low, claim_count if claim_count else 1) * 100.0))
+        )
+        evidence_relevance_score = max(0.0, min(100.0, evidence_relevance_score))
+
+        counterargument_balance_score = (
+            0.45 * min(100.0, counterargument_markers * 22.0)
+            + 0.30 * (self._safe_ratio(counterargument_claims, claim_count if claim_count else 1) * 100.0)
+            + 0.25 * min(100.0, qualifier_markers * 9.0)
+        )
+        counterargument_balance_score = max(0.0, min(100.0, counterargument_balance_score))
+
+        scope_calibration_score = (
+            0.35 * min(100.0, qualifier_markers * 9.0)
+            + 0.30 * (self._safe_ratio(scope_qualified_claims, claim_count if claim_count else 1) * 100.0)
+            + 0.20 * min(100.0, hedges * 10.0)
+            + 0.15 * max(0.0, 100.0 - min(100.0, absolute_terms * 10.0))
+        )
+        scope_calibration_score = max(0.0, min(100.0, scope_calibration_score))
+
+        causal_coherence_score = (
+            0.38 * min(100.0, causal_marker_count * 8.0)
+            + 0.36 * inference_chain_stability
+            + 0.26 * max(0.0, 100.0 - min(100.0, high_gap * 22.0))
+        )
+        causal_coherence_score = max(0.0, min(100.0, causal_coherence_score))
+
         logic_integrity_score = (
-            0.09 * assumption_quality
-            + 0.17 * assumption_boundary_clarity
+            0.08 * assumption_quality
+            + 0.14 * assumption_boundary_clarity
             + 0.11 * min(100.0, if_then_count * 20.0)
-            + 0.10 * if_then_completeness
-            + 0.14 * (100.0 - contradiction_index)
-            + 0.14 * (100.0 - overclaim_penalty)
+            + 0.09 * if_then_completeness
+            + 0.12 * coherence_score
+            + 0.11 * (100.0 - overclaim_penalty)
             + 0.06 * uncertainty_calibration
             + 0.07 * inference_chain_stability
             + 0.06 * connector_score
             + 0.06 * science_reasoning_proxy
+            + 0.04 * evidence_grounding_score
+            + 0.03 * evidence_relevance_score
+            + 0.03 * counterargument_balance_score
+            + 0.02 * scope_calibration_score
+            + 0.01 * causal_coherence_score
         )
 
         # Dampen logic integrity for very short/vague text with no explicit structure.
@@ -970,8 +1535,9 @@ Return a JSON array of 5 strings, nothing else. Example:
             # more reliably influence downstream scoring.
             0.38 * min(100.0, evidence_claims * 16.0)
             + 0.32 * min(100.0, strong_ev * 16.0)
+            + 0.15 * evidence_relevance_score
             + 0.15 * (self._safe_ratio(falsifiable, claim_count if claim_count else 1) * 100.0)
-            + 0.15 * (self._safe_ratio(verifiable, claim_count if claim_count else 1) * 100.0)
+            + 0.10 * (self._safe_ratio(verifiable, claim_count if claim_count else 1) * 100.0)
         )
         evidence_dependency_score = max(0.0, min(100.0, evidence_dependency_score))
 
@@ -982,10 +1548,11 @@ Return a JSON array of 5 strings, nothing else. Example:
             or if_then_count >= 1
             or connector_count >= 2
             or science_reasoning_proxy >= 55
+            or evidence_grounding_score >= 45
             or (
                 word_count >= 35
                 and inference_chain_stability >= 40
-                and contradiction_index < 70
+                and incoherence_index < 70
                 and overclaim_penalty < 85
             )
             or evidence_dependency_score >= 40
@@ -1007,12 +1574,23 @@ Return a JSON array of 5 strings, nothing else. Example:
             "if_then_completeness": round(if_then_completeness, 2),
             "connector_count": connector_count,
             "connector_score": round(connector_score, 2),
-            "contradiction_signals": contradiction_signals,
-            "contradiction_index": round(contradiction_index, 2),
+            "causal_marker_count": causal_marker_count,
+            "evidence_marker_count": evidence_marker_count,
+            "citation_count": citation_count,
+            "counterargument_markers": counterargument_markers,
+            "qualifier_markers": qualifier_markers,
+            "logic_break_signals": logic_break_signals,
+            "incoherence_index": round(incoherence_index, 2),
+            "coherence_score": round(coherence_score, 2),
             "overclaim_penalty": round(overclaim_penalty, 2),
             "uncertainty_calibration": round(uncertainty_calibration, 2),
             "inference_chain_stability": round(inference_chain_stability, 2),
             "science_reasoning_proxy": round(science_reasoning_proxy, 2),
+            "evidence_grounding_score": round(evidence_grounding_score, 2),
+            "evidence_relevance_score": round(evidence_relevance_score, 2),
+            "counterargument_balance_score": round(counterargument_balance_score, 2),
+            "scope_calibration_score": round(scope_calibration_score, 2),
+            "causal_coherence_score": round(causal_coherence_score, 2),
             "logic_presence_flag": logic_presence_flag,
             "logic_integrity_score": round(logic_integrity_score, 2),
             "evidence_dependency_score": round(evidence_dependency_score, 2),
@@ -1029,6 +1607,7 @@ Return a JSON array of 5 strings, nothing else. Example:
         Linear scoring model around a fixed starting point (75).
         """
         metadata = metadata or []
+        claim_count = len(metadata)
         base_score = float(os.getenv("BASE_SCORE", "75"))
         fallacy_weight = float(os.getenv("FALLACY_WEIGHT", "1.05"))
         bias_weight = float(os.getenv("BIAS_WEIGHT", "0.35"))
@@ -1151,7 +1730,7 @@ Return a JSON array of 5 strings, nothing else. Example:
                 or (
                     word_count <= 30
                     and float(logic_vars.get("logic_integrity_score", 0.0)) >= 35.0
-                    and float(logic_vars.get("contradiction_index", 0.0)) < 60.0
+                    and float(logic_vars.get("incoherence_index", 100.0)) < 60.0
                 )
             )
         )
@@ -1181,35 +1760,98 @@ Return a JSON array of 5 strings, nothing else. Example:
             # Fictional lane emphasizes internal consistency over empirical falsifiability.
             low_testability_penalty *= 0.45
 
-        short_vacuity_penalty = 0.0
-        if word_count < 8 and logic_score < 60 and not coherence_lane_active:
-            short_vacuity_penalty = 14.0
-        elif word_count < 15 and logic_score < 60 and not coherence_lane_active:
-            short_vacuity_penalty = 8.0
-        elif word_count < 30 and logic_score < 45 and not coherence_lane_active:
-            short_vacuity_penalty = 4.0
+        # Non-linear short-length penalty:
+        # short text is not automatically penalized hard; penalty scales by quality signal.
+        quality_signal = max(
+            0.0,
+            min(
+                100.0,
+                0.40 * (100.0 - bias_level_score)
+                + 0.35 * effective_testability
+                + 0.25 * logic_score,
+            ),
+        )
+        short_vacuity_penalty = (
+            20.0
+            * math.exp(-word_count / 32.0)
+            * max(0.0, (55.0 - quality_signal) / 55.0)
+        )
+
+        # Description/statement mode:
+        # captures short neutral factual statements that provide information
+        # but little explicit reasoning/context.
+        factual_like = sum(
+            1 for c in metadata
+            if c.get("claim_type") in {"factual", "historical", "definition"}
+        )
+        opinion_like = sum(
+            1 for c in metadata
+            if c.get("claim_type") in {"opinion", "moral", "prediction"}
+        )
+        neutral_tone = sum(1 for c in metadata if c.get("emotional_tone") in {"neutral", None})
+        factual_ratio = self._safe_ratio(factual_like, claim_count if claim_count else 1)
+        opinion_ratio = self._safe_ratio(opinion_like, claim_count if claim_count else 1)
+        neutral_ratio = self._safe_ratio(neutral_tone, claim_count if claim_count else 1)
+        factual_observation_mode = bool(
+            word_count <= 24
+            and factual_ratio >= 0.6
+            and neutral_ratio >= 0.6
+            and opinion_ratio <= 0.35
+            and bias_level_score <= 45.0
+            and issue_count <= 1
+            and float(logic_vars.get("overclaim_penalty", 0.0)) < 55.0
+            and float(logic_vars.get("incoherence_index", 100.0)) < 55.0
+            and not effective_logic_presence
+        )
+
+        # Keep penalization for logic-less statements, but avoid over-amplifying it.
+        description_statement_penalty = 0.0
+        if factual_observation_mode:
+            description_statement_penalty = 8.0
+            short_vacuity_penalty *= 1.05
 
         substance_adjustment = short_vacuity_penalty
 
-        # Binary logic-absence penalty:
-        # apply -25 if logic is absent, otherwise leave untouched.
+        # Non-linear logic-absence penalty:
+        # scales with length and quality, avoids abrupt cliff behavior.
+        absence_base = 22.0 * math.exp(-word_count / 45.0)
         if effective_logic_presence:
-            logic_absence_penalty = 0.0
+            logic_absence_penalty = absence_base * (0.35 if logic_score < 35.0 else 0.0)
         else:
-            if word_count < 20:
-                logic_absence_penalty = 25.0
-            elif word_count < 60:
-                logic_absence_penalty = 12.0
-            else:
-                logic_absence_penalty = 6.0
+            logic_absence_penalty = absence_base * max(0.25, (60.0 - quality_signal) / 60.0)
 
         razor_reward_scaled = 0.40 * total_reward_capped
         testability_reward = max(0.0, effective_testability - 60.0) * testability_reward_gain
         logic_boost = max(0.0, logic_score - 45.0) * logic_reward_gain
         if coherence_lane_active and word_count < 35:
             logic_boost += max(0.0, logic_score - 35.0) * 0.14
-        # Meta-hint contributors for science/logical rigor, boosted by 10%.
-        max_meta_hint_bonus = float(os.getenv("MAX_META_HINT_BONUS", "13.2"))
+
+        # Density-aware scaling:
+        # reward sustained structure/evidence density, especially as length grows.
+        density_den = max(1.0, word_count / 100.0)
+        density_raw = (
+            1.4 * float(logic_vars.get("connector_count", 0.0))
+            + 1.3 * float(logic_vars.get("if_then_count", 0.0))
+            + 1.2 * float(logic_vars.get("evidence_marker_count", 0.0))
+            + 1.5 * float(logic_vars.get("citation_count", 0.0))
+            + 1.0 * float(logic_vars.get("counterargument_markers", 0.0))
+        ) / density_den
+        density_score = max(0.0, min(100.0, density_raw * 12.0))
+
+        # Non-linear bonus for maintaining quality at high word counts.
+        length_complexity_factor = 1.0 - math.exp(-max(0.0, word_count - 120.0) / 140.0)
+        high_length_quality_bonus = (
+            length_complexity_factor
+            * max(0.0, quality_signal - 58.0)
+            * 0.22
+        )
+        high_length_density_bonus = (
+            max(0.0, 1.0 - math.exp(-max(0.0, word_count - 80.0) / 130.0))
+            * max(0.0, density_score - 45.0)
+            * 0.09
+        )
+        # Meta-hint contributors for science/logical rigor, with bounded lift.
+        max_meta_hint_bonus = float(os.getenv("MAX_META_HINT_BONUS", "16.0"))
         meta_hint_bonus = 0.0
         if logic_presence_flag:
             meta_hint_bonus += 2.2
@@ -1221,6 +1863,16 @@ Return a JSON array of 5 strings, nothing else. Example:
             meta_hint_bonus += 3.3
         if float(logic_vars.get("science_reasoning_proxy", 0.0)) >= 60:
             meta_hint_bonus += 1.8
+        if float(logic_vars.get("evidence_grounding_score", 0.0)) >= 55:
+            meta_hint_bonus += 1.6
+        if float(logic_vars.get("evidence_relevance_score", 0.0)) >= 55:
+            meta_hint_bonus += 1.3
+        if float(logic_vars.get("counterargument_balance_score", 0.0)) >= 45:
+            meta_hint_bonus += 1.1
+        if float(logic_vars.get("scope_calibration_score", 0.0)) >= 50:
+            meta_hint_bonus += 1.1
+        if float(logic_vars.get("causal_coherence_score", 0.0)) >= 55:
+            meta_hint_bonus += 1.2
         if coherence_lane_active and word_count < 35:
             meta_hint_bonus += 1.65
         meta_hint_bonus = min(meta_hint_bonus, max_meta_hint_bonus)
@@ -1229,8 +1881,8 @@ Return a JSON array of 5 strings, nothing else. Example:
         if not is_fictional:
             science_proxy = float(logic_vars.get("science_reasoning_proxy", 0.0))
             connector_score = float(logic_vars.get("connector_score", 0.0))
-            contradiction_idx = float(logic_vars.get("contradiction_index", 0.0))
-            if science_proxy >= 60 and contradiction_idx < 40:
+            incoherence_idx = float(logic_vars.get("incoherence_index", 100.0))
+            if science_proxy >= 60 and incoherence_idx < 40:
                 science_logic_bonus = min(
                     8.0,
                     max(0.0, (science_proxy - 55.0) * 0.198)
@@ -1257,7 +1909,7 @@ Return a JSON array of 5 strings, nothing else. Example:
 
         fiction_lane_bonus = 0.0
         if is_fictional:
-            if coherence_lane_active and logic_score >= 65 and float(logic_vars.get("contradiction_index", 0.0)) < 35:
+            if coherence_lane_active and logic_score >= 65 and float(logic_vars.get("incoherence_index", 100.0)) < 35:
                 fiction_lane_bonus += 8.0
             elif coherence_lane_active and logic_score >= 55:
                 fiction_lane_bonus += 4.0
@@ -1271,6 +1923,8 @@ Return a JSON array of 5 strings, nothing else. Example:
             + deduction_bonus
             + fiction_bonus
             + fiction_lane_bonus
+            + high_length_quality_bonus
+            + high_length_density_bonus
         )
 
         final_score = (
@@ -1280,13 +1934,20 @@ Return a JSON array of 5 strings, nothing else. Example:
             - low_testability_penalty
             - short_vacuity_penalty
             - logic_absence_penalty
+            - description_statement_penalty
             + calibration_bonus
         )
 
         # Guardrails: weak logic integrity should significantly limit the score.
+        short_quality_exception = (
+            word_count <= 30
+            and effective_testability >= 60
+            and bias_level_score <= 40
+            and float(logic_vars.get("evidence_relevance_score", 0.0)) >= 55
+        )
         guardrail_triggered = (
-            logic_vars["logic_integrity_score"] < 30
-            or logic_vars["contradiction_index"] >= 65
+            (logic_vars["logic_integrity_score"] < 30 and not short_quality_exception)
+            or logic_vars["incoherence_index"] >= 65
             or logic_vars["overclaim_penalty"] >= 70
         )
         if guardrail_triggered:
@@ -1370,6 +2031,8 @@ Return a JSON array of 5 strings, nothing else. Example:
             status_message += " Input seems fictional, so internal coherence is used for analysis instead of external evidence."
         if sub_pen >= 40:
             status_message += " Input is very short, so confidence in interpretation is limited."
+        if factual_observation_mode:
+            status_message += " Input was treated as a description/statement with limited logic context."
 
         return {
             "base_score": base_score,
@@ -1404,6 +2067,12 @@ Return a JSON array of 5 strings, nothing else. Example:
             "substance_adjustment": round(substance_adjustment, 2),
             "short_vacuity_penalty": round(short_vacuity_penalty, 2),
             "logic_absence_penalty": round(logic_absence_penalty, 2),
+            "description_statement_penalty": round(description_statement_penalty, 2),
+            "quality_signal": round(quality_signal, 2),
+            "factual_observation_mode": factual_observation_mode,
+            "density_score": round(density_score, 2),
+            "high_length_quality_bonus": round(high_length_quality_bonus, 2),
+            "high_length_density_bonus": round(high_length_density_bonus, 2),
             "calibration_bonus": round(calibration_bonus, 2),
             "testability_reward": round(testability_reward, 2),
             "logic_boost": round(logic_boost, 2),

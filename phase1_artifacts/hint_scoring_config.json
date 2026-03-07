@@ -1,0 +1,81 @@
+{
+  "razor_formulas": {
+    "occams_razor": {
+      "violation_hints": ["speculation_level", "variable_omission", "causal_simplification"],
+      "pass_threshold": 2
+    },
+    "hanlons_razor": {
+      "violation_hints": ["intent_attribution", "intent_projection"],
+      "pass_threshold": 1.5
+    },
+    "hitchens_razor": {
+      "violation_hints": ["evidence_strength", "unfalsifiable_risk", "falsifiability"],
+      "pass_threshold": 2
+    },
+    "sagan_standard": {
+      "violation_hints": ["claim_specificity", "evidence_strength", "unfalsifiable_risk"],
+      "pass_threshold": 3
+    },
+    "newtons_flaming_laser_sword": {
+      "violation_hints": ["falsifiability", "unfalsifiable_risk"],
+      "pass_threshold": 1.5
+    },
+    "poppers_falsifiability": {
+      "violation_hints": ["unfalsifiable_risk", "falsifiability"],
+      "pass_threshold": 1.5
+    }
+  },
+  "bias_hints": [
+    "absolute_language",
+    "affective_reasoning",
+    "attentional_narrowing",
+    "authority_dependence",
+    "binary_framing",
+    "causal_overreach",
+    "causal_simplification",
+    "cherry_picking_risk",
+    "correlation_causation",
+    "distraction_risk",
+    "emotional_load",
+    "evidence_relevance",
+    "generalization_strength",
+    "inferential_gap",
+    "intent_attribution",
+    "intent_projection",
+    "memory_selectivity",
+    "missing_counterevidence",
+    "novelty_tradition_appeal",
+    "pattern_projection",
+    "personal_attack",
+    "popularity_appeal",
+    "proportionality_assumption",
+    "redefinition_defense",
+    "retrospective_coherence",
+    "salience_weighting",
+    "sample_representativeness",
+    "speculation_level",
+    "symmetry_forcing",
+    "threat_amplification",
+    "unfalsifiable_risk",
+    "variable_omission"
+  ],
+  "logic_hints_positive": [
+    "claim_specificity",
+    "counterargument_quality",
+    "scope_qualification"
+  ],
+  "logic_hints_negative": [
+    "evidence_strength",
+    "evidence_relevance",
+    "falsifiability",
+    "inferential_gap"
+  ],
+  "razor_hints": [
+    "falsifiability",
+    "evidence_strength",
+    "causal_overreach",
+    "intent_attribution",
+    "unfalsifiable_risk",
+    "inferential_gap"
+  ]
+}

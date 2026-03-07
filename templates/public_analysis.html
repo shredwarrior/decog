@@ -19,6 +19,16 @@
     <meta name="twitter:title" content="de-cognition: find errors in opinions">
     <meta name="twitter:description" content="de-cognition: argument analyser">
     <meta name="twitter:image" content="{{ url_for('static', filename='logo.png', _external=True) }}">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-H1TT4NT3E0"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-H1TT4NT3E0');
+    </script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3543566244103973"
+         crossorigin="anonymous"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -294,7 +304,8 @@
         </div>
 
         <div class="social-row">
-            <a class="social-btn" href="https://twitter.com/intent/tweet?text={{ ('de-cognition: find errors in opinions')|urlencode }}&url={{ request.url|urlencode }}" target="_blank" rel="noopener">Share on X</a>
+            {% set share_text = 'de-cognition: find errors in opinions — ' ~ (analysis.status_label or 'Analyzed') ~ ' (' ~ (analysis.score|int) ~ '/100)' %}
+            <a class="social-btn" href="https://twitter.com/intent/tweet?text={{ share_text|urlencode }}&url={{ request.url|urlencode }}" target="_blank" rel="noopener">Share on X</a>
             <a class="social-btn" href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url|urlencode }}" target="_blank" rel="noopener">LinkedIn</a>
             <a class="social-btn" href="https://www.facebook.com/sharer/sharer.php?u={{ request.url|urlencode }}" target="_blank" rel="noopener">Facebook</a>
         </div>
