@@ -586,6 +586,9 @@ class ArgumentAnalyzer:
             "status_message": status_message,
             "logic_variables": logic_variables,
             "source": "hint_based",
+            "raw_score": strength,
+            "logic_integrity_score": logic_score,
+            "razor_alignment": scores.get("razor_alignment", 0),
         }
         if dimension_bands:
             out["dimension_bands"] = dimension_bands
@@ -745,6 +748,9 @@ Only include items that clearly apply. Keep lists short (max 2-3 each). Use snak
                         "status_message": "Insufficient input to analyze, argument is likely just a statement.",
                         "interpretation_27": "Insufficient input to analyze, argument is likely just a statement.",
                         "dimension_scores": {"bias_score": 0, "testability_score": 0, "logic_score": 0},
+                        "raw_score": 0,
+                        "logic_integrity_score": 0,
+                        "razor_alignment": 0,
                     },
                     "improvements": [],
                     "improvements_pending": False,
