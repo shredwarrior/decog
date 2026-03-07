@@ -612,7 +612,7 @@ Only include items that clearly apply. Keep lists short (max 2-3 each). Use snak
                     {"role": "system", "content": "You classify arguments into cognitive bias categories. Return only valid JSON."},
                     {"role": "user", "content": prompt},
                 ],
-                max_completion_tokens=120,
+                max_tokens=120,
             )
             raw = response.choices[0].message.content
             data = self._safe_json_loads(raw) if isinstance(raw, str) else {}
@@ -778,7 +778,7 @@ Only include items that clearly apply. Keep lists short (max 2-3 each). Use snak
                         {"role": "user", "content": prompt},
                     ],
                     response_format={"type": "json_schema", "json_schema": self._hints_only_schema(include_bias=include_bias)},
-                    max_completion_tokens=int(os.getenv("SLA_MAX_COMPLETION_TOKENS", "280")),
+                    max_tokens=int(os.getenv("SLA_MAX_COMPLETION_TOKENS", "280")),
                 )
                 raw = response.choices[0].message.content
                 payload = self._safe_json_loads(raw) if isinstance(raw, str) else {}
