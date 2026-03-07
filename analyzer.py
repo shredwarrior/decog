@@ -124,11 +124,7 @@ class ArgumentAnalyzer:
         return f"{self.prompt_cache_key_base}:{stage}"
 
     def _chat_create(self, stage, **kwargs):
-        """Centralized OpenAI chat call with prompt-caching controls."""
-        cache_key = self._cache_key(stage)
-        if cache_key:
-            kwargs["prompt_cache_key"] = cache_key
-        kwargs["prompt_cache_retention"] = self.prompt_cache_retention
+        """Centralized OpenAI chat call. Omit prompt_cache_* for openai 1.3 compatibility."""
         response = self.client.chat.completions.create(**kwargs)
         self._record_usage(stage, response)
         return response
@@ -776,16 +772,19 @@ Only include items that clearly apply. Keep lists short (max 2-3 each). Use snak
             elif self.use_llm_metadata:
                 include_bias = self.use_llm_bias_patch
                 prompt = self._build_hints_only_prompt(argument_text, include_bias=include_bias)
-                response = self._chat_create(
-                    "single_call_hints",
-                    model=self.model_name,
-                    messages=[
+                chat_kw = {
+                    "model": self.model_name,
+                    "messages": [
                         {"role": "system", "content": self.single_call_system_prompt},
                         {"role": "user", "content": prompt},
                     ],
-                    response_format={"type": "json_schema", "json_schema": self._hints_only_schema(include_bias=include_bias)},
-                    max_tokens=int(os.getenv("SLA_MAX_COMPLETION_TOKENS", "280")),
-                )
+                    "max_tokens": int(os.getenv("SLA_MAX_COMPLETION_TOKENS", "280")),
+                }
+                if not os.getenv("OPENAI_LEGACY_RESPONSE_FORMAT", "").strip().lower() in {"1", "true", "yes"}:
+                    chat_kw["response_format"] = {"type": "json_schema", "json_schema": self._hints_only_schema(include_bias=include_bias)}
+                else:
+                    chat_kw["response_format"] = {"type": "json_object"}
+                response = self._chat_create("single_call_hints", **chat_kw)
                 raw = response.choices[0].message.content
                 payload = self._safe_json_loads(raw) if isinstance(raw, str) else {}
                 llm_hints = self._sanitize_llm_hints(payload)
