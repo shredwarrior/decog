@@ -28,7 +28,7 @@ class ArgumentAnalyzer:
         self.use_ml_hints = os.getenv("USE_ML_HINTS", "false").strip().lower() in {"1", "true", "yes", "on"}
         self.use_semantic_hints = os.getenv("USE_SEMANTIC_HINTS", "false").strip().lower() in {"1", "true", "yes", "on"}
         self.use_llm_bias_patch = os.getenv("USE_LLM_BIAS_PATCH", "true").strip().lower() in {"1", "true", "yes", "on"}
-        self.model_name = os.getenv("OPENAI_MODEL", "gpt-5-mini")
+        self.model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         self.llm_bias_model = os.getenv("LLM_BIAS_MODEL", "gpt-4o-mini")
         self.prompt_cache_key_base = (os.getenv("OPENAI_PROMPT_CACHE_KEY", "") or "").strip()
         retention = (os.getenv("OPENAI_PROMPT_CACHE_RETENTION", "in_memory") or "").strip().lower()
@@ -125,6 +125,13 @@ class ArgumentAnalyzer:
 
     def _chat_create(self, stage, **kwargs):
         """Centralized OpenAI chat call. Omit prompt_cache_* for openai 1.3 compatibility."""
+        # openai 1.3.0 only accepts max_tokens; newer models require max_completion_tokens.
+        # Pass max_completion_tokens via extra_body so the API receives it.
+        if "max_completion_tokens" in kwargs:
+            n = kwargs.pop("max_completion_tokens")
+            extra = kwargs.pop("extra_body", None) or {}
+            extra["max_completion_tokens"] = n
+            kwargs["extra_body"] = extra
         response = self.client.chat.completions.create(**kwargs)
         self._record_usage(stage, response)
         return response
@@ -611,7 +618,7 @@ Only include items that clearly apply. Keep lists short (max 2-3 each). Use snak
                     {"role": "system", "content": "You classify arguments into cognitive bias categories. Return only valid JSON."},
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=120,
+                max_completion_tokens=120,
             )
             raw = response.choices[0].message.content
             data = self._safe_json_loads(raw) if isinstance(raw, str) else {}
@@ -778,12 +785,12 @@ Only include items that clearly apply. Keep lists short (max 2-3 each). Use snak
                         {"role": "system", "content": self.single_call_system_prompt},
                         {"role": "user", "content": prompt},
                     ],
-                    "max_tokens": int(os.getenv("SLA_MAX_COMPLETION_TOKENS", "280")),
+                    "max_completion_tokens": int(os.getenv("SLA_MAX_COMPLETION_TOKENS", "280")),
                 }
-                if not os.getenv("OPENAI_LEGACY_RESPONSE_FORMAT", "").strip().lower() in {"1", "true", "yes"}:
+                legacy = os.getenv("OPENAI_LEGACY_RESPONSE_FORMAT", "").strip().lower() in {"1", "true", "yes"}
+                if not legacy:
                     chat_kw["response_format"] = {"type": "json_schema", "json_schema": self._hints_only_schema(include_bias=include_bias)}
-                else:
-                    chat_kw["response_format"] = {"type": "json_object"}
+                # When legacy=1: omit response_format entirely for max compatibility; prompt still elicits JSON
                 response = self._chat_create("single_call_hints", **chat_kw)
                 raw = response.choices[0].message.content
                 payload = self._safe_json_loads(raw) if isinstance(raw, str) else {}
